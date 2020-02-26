@@ -1,0 +1,25 @@
+{
+  "name": "cs2102backend",
+  "version": "1.0.0",
+  "description": "Backend code for CS2102 Project",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andlimey/CS2102Backend.git"
+  },
+  "author": "Andy, Nitta, Nivian, Zhi Yu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andlimey/CS2102Backend/issues"
+  },
+  "homepage": "https://github.com/andlimey/CS2102Backend#readme",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "pg": "^7.18.2"
+  }
+}
