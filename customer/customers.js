@@ -40,8 +40,8 @@ const createCustomer = (request, response) => {
     phone: request.body.customerPhone,
     address: request.body.customerAddress,
     postalCode: request.body.customerPostalCode,
-    rewardPoints: request.body.rewardPoints,
-    dateCreated: request.body.dateCreated
+    rewardPoints: 0,
+    dateCreated: new Date()
   };
   const values = [
     data.name,
@@ -53,7 +53,7 @@ const createCustomer = (request, response) => {
     data.rewardPoints,
     data.dateCreated
   ];
-
+  //console.log(values);
   pool.query(
     'INSERT INTO Customers (customerName, customerEmail,customerPassword,customerPhone,customerAddress,customerPostalCode,rewardPoints,dateCreated) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
     values,
@@ -62,42 +62,51 @@ const createCustomer = (request, response) => {
         throw error;
       }
 
-      response.status(201).send(`Successful! User added with ID: ${result.insertId}`);
+      response.status(201).send({ message: 'Successfully added!' });
     }
   );
 };
 
-// const updateUser = (request, response) => {
-//   const id = parseInt(request.params.id)
-//   const { name, email } = request.body
+const updateCustomer = (request, response) => {
+  const id = parseInt(request.params.id);
+  const data = {
+    name: request.body.customerName,
+    email: request.body.customerEmail,
+    password: request.body.customerPassword,
+    phone: request.body.customerPhone,
+    address: request.body.customerAddress,
+    postalCode: request.body.customerPostalCode,
+    customerId: request.params.id
+  };
+  const values = [data.name, data.email, data.password, data.phone, data.address, data.postalCode, data.customerId];
+  console.log(values);
+  pool.query(
+    'UPDATE Customers SET customerName = $1, customerEmail = $2, customerPassword = $3, customerPhone = $4, customerAddress = $5, customerPostalCode = $6 WHERE customerId = $7',
+    values,
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).send({ message: 'Successfully updated!' });
+    }
+  );
+};
 
-//   pool.query(
-//     'UPDATE Customers SET name = $1, email = $2 WHERE id = $3',
-//     [name, email, id],
-//     (error, results) => {
-//       if (error) {
-//         throw error
-//       }
-//       response.status(200).send(`User modified with ID: ${id}`)
-//     }
-//   )
-// }
+const deleteUser = (request, response) => {
+  const id = parseInt(request.params.id);
 
-// const deleteUser = (request, response) => {
-//   const id = parseInt(request.params.id)
-
-//   pool.query('DELETE FROM Customers WHERE id = $1', [id], (error, results) => {
-//     if (error) {
-//       throw error
-//     }
-//     response.status(200).send(`User deleted with ID: ${id}`)
-//   })
-// }
+  pool.query('DELETE FROM Customers WHERE id = $1', [id], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).send(`User deleted with ID: ${id}`);
+  });
+};
 
 module.exports = {
   getCustomers,
   getCustomerById,
-  createCustomer
-  // updateCustomer,
-  // deleteCustomer,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer
 };
