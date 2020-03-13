@@ -18,10 +18,13 @@ app.get('/', (request, response) => {
 });
 
 app.get('/users', db.getUsers);
+
+//customer apis
 app.get('/customers', cusDb.getCustomers);
 app.get('/customers/:id', cusDb.getCustomerById);
 app.post('/customers', cusDb.createCustomer);
 app.put('/customers/:id', cusDb.updateCustomer);
+app.delete('/customers/:id', cusDb.deleteCustomer);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);

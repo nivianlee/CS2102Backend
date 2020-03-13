@@ -62,7 +62,7 @@ const createCustomer = (request, response) => {
         throw error;
       }
 
-      response.status(201).send({ message: 'Successfully added!' });
+      response.status(201).send({ message: 'Customer has been added successfully!' });
     }
   );
 };
@@ -87,19 +87,19 @@ const updateCustomer = (request, response) => {
       if (error) {
         throw error;
       }
-      response.status(200).send({ message: 'Successfully updated!' });
+      response.status(200).send({ message: 'Customer has been updated successfully!' });
     }
   );
 };
 
-const deleteUser = (request, response) => {
+const deleteCustomer = (request, response) => {
   const id = parseInt(request.params.id);
 
-  pool.query('DELETE FROM Customers WHERE id = $1', [id], (error, results) => {
+  pool.query('DELETE FROM Customers WHERE customerId = $1', [id], (error, results) => {
     if (error) {
       throw error;
     }
-    response.status(200).send(`User deleted with ID: ${id}`);
+    response.status(200).send({ message: 'Customer has been deleted successfully!' });
   });
 };
 
