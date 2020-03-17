@@ -1,0 +1,1 @@
+insert into Customers (customerId,customerName,customerEmail,customerPassword,customerPhone,customerAddress,customerPostalCode,rewardPoints,dateCreated) values (DEFAULT,'Nitayawan','nitta@gmail.com','password','87823577','Blk 106 Bedok #03-384',470106,0,'2020-03-12 03:11:56');

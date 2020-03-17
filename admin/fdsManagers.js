@@ -1,5 +1,5 @@
-require('dotenv').config();
-const Pool = require('pg').Pool;
+require("dotenv").config();
+const Pool = require("pg").Pool;
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -10,7 +10,7 @@ const pool = new Pool({
 });
 
 const getFDSManagers = (request, response) => {
-  pool.query('SELECT * FROM FDSManagers ORDER BY managerID ASC', (error, results) => {
+  pool.query("SELECT * FROM FDSManagers ORDER BY managerid ASC", (error, results) => {
     if (error) {
       throw error;
     }
@@ -18,10 +18,10 @@ const getFDSManagers = (request, response) => {
   });
 };
 
-const getFDSManagerById = (request, response) => {
-  const managerID = parseInt(request.params.managerID);
+const getFDSManagersById = (request, response) => {
+  const managerid = parseInt(request.params.managerid);
 
-  pool.query('SELECT * FROM FDSManagers WHERE managerID = $1', [managerID], (error, results) => {
+  pool.query("SELECT * FROM FDSManagers WHERE managerid = $1", [managerid], (error, results) => {
     if (error) {
       throw error;
     }
@@ -30,28 +30,46 @@ const getFDSManagerById = (request, response) => {
 };
 
 const createFDSManagers = (request, response) => {
-  pool.query('INSERT INTO FDSManagers', (error, results) => {
+  const managername = request.body.managername;
+  pool.query("INSERT INTO FDSManagers (managername) VALUES ($1) RETURNING *", [managername], (error, results) => {
     if (error) {
       throw error;
     }
-    response.status(201).send(`FDSManager added with managerID: ${result.insertId}`);
+    response.status(201).send(`Manager added with manager name: ${results.rows[0].managername}`);
   });
 };
 
-// const deleteFDSManager = (request, response) => {
-//   const managerID = parseInt(request.params.managerID);
+const updateFDSManagers = (request, response) => {
+  const managerid = parseInt(request.params.managerid);
+  const managername = request.body.managername;
 
-//   pool.query('DELETE FROM FDSManagers WHERE managerID = $1', [managerID], (error, results) => {
-//     if (error) {
-//       throw error;
-//     }
-//     response.status(200).send(`User deleted with managerID: ${managerID}`);
-//   });
-// };
+  pool.query(
+    "UPDATE FDSManagers SET managername = $1 WHERE managerid = $2 RETURNING *",
+    [managername, managerid],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(201).send(`Manager has been updated with manager name: ${results.rows[0].managername}`);
+    }
+  );
+};
+
+const deleteFDSManagers = (request, response) => {
+  const managerid = parseInt(request.params.managerid);
+
+  pool.query("DELETE FROM FDSManagers WHERE managerid = $1 RETURNING *", [managerid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(201).send(`Manager with manager id ${results.rows[0].managerid} has been deleted`);
+  });
+};
 
 module.exports = {
   getFDSManagers,
-  getFDSManagerById,
-  createFDSManagers
-  // deleteFDSManager
+  getFDSManagersById,
+  createFDSManagers,
+  updateFDSManagers,
+  deleteFDSManagers
 };
