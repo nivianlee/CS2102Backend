@@ -1,0 +1,21 @@
+foodItemID,foodItemName,price,availabilityStatus,image,maxNumOfOrders,category,restaurantID
+1,Fried Rice,15.35,TRUE,282990940,40,Chinese,1
+2,Fish and Chips,3.42,FALSE,4947294437,28,Western,2
+3,Wanton Mee,23.74,FALSE,5939947365,50,Chinese,3
+4,Ribeye Steak,7.71,FALSE,7459106677,30,Western,4
+5,Beef Pho,3.47,TRUE,904549556,13,Vietnamese,5
+6,Fish noodles,10.57,FALSE,1636853709,42,Chinese,6
+7,Lor Mee,23.51,FALSE,7707902469,24,Chinese,7
+8,Egg Prata,27.35,TRUE,3993517855,34,Indian,8
+9,Pineapple Fried Rice,3.4,FALSE,2858295148,37,Thai,9
+10,Aglio Olio,12.18,FALSE,7119669820,42,Italian,10
+11,Carbonara,6.39,TRUE,8051605428,43,Italian,11
+12,Kaisen Don,8.03,FALSE,4183090251,25,Japanese,12
+13,Fish Burger,5.44,FALSE,693937234,22,Western,13
+14,U-Mian,16.28,FALSE,8873541780,42,Chinese,14
+15,Chicken Rice,5.24,FALSE,3408533434,29,Chinese,15
+16,Pad Thai,16.63,FALSE,7350904257,23,Thai,16
+17,Maggie Goreng,7.39,TRUE,444287722,48,Indian,17
+18,Nasi Briyani,28.46,FALSE,5459881426,16,Malay,18
+19,Sambal Fried Rice,23.54,FALSE,4209744493,41,Chinese,19
+20,Beef Hor Fan,4.61,FALSE,6951303759,48,Chinese,20
