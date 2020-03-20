@@ -10,9 +10,9 @@ const getCustomers = (request, response) => {
 };
 
 const getCustomerById = (request, response) => {
-  const id = parseInt(request.params.id);
+  const customerid = parseInt(request.params.customerid);
 
-  pool.query('SELECT * FROM Customers WHERE customerid = $1', [id], (error, results) => {
+  pool.query('SELECT * FROM Customers WHERE customerid = $1', [customerid], (error, results) => {
     if (error) {
       throw error;
     }
@@ -56,7 +56,7 @@ const createCustomer = (request, response) => {
 };
 
 const updateCustomer = (request, response) => {
-  const id = parseInt(request.params.id);
+  const customerid = parseInt(request.params.customerid);
   const data = {
     name: request.body.customerName,
     email: request.body.customerEmail,
@@ -64,7 +64,7 @@ const updateCustomer = (request, response) => {
     phone: request.body.customerPhone,
     address: request.body.customerAddress,
     postalCode: request.body.customerPostalCode,
-    customerId: request.params.id
+    customerId: request.params.customerid
   };
   const values = [data.name, data.email, data.password, data.phone, data.address, data.postalCode, data.customerId];
   console.log(values);
@@ -81,9 +81,9 @@ const updateCustomer = (request, response) => {
 };
 
 const deleteCustomer = (request, response) => {
-  const id = parseInt(request.params.id);
+  const customerid = parseInt(request.params.customerid);
 
-  pool.query('DELETE FROM Customers WHERE customerId = $1', [id], (error, results) => {
+  pool.query('DELETE FROM Customers WHERE customerId = $1', [customerid], (error, results) => {
     if (error) {
       throw error;
     }
