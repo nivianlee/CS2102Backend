@@ -1,16 +1,7 @@
-require("dotenv").config();
-const Pool = require("pg").Pool;
-
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_DATABASE,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT
-});
+const pool = require('../../pool.js');
 
 const getFDSManagers = (request, response) => {
-  pool.query("SELECT * FROM FDSManagers ORDER BY managerid ASC", (error, results) => {
+  pool.query('SELECT * FROM FDSManagers ORDER BY managerid ASC', (error, results) => {
     if (error) {
       throw error;
     }
@@ -21,7 +12,7 @@ const getFDSManagers = (request, response) => {
 const getFDSManagersById = (request, response) => {
   const managerid = parseInt(request.params.managerid);
 
-  pool.query("SELECT * FROM FDSManagers WHERE managerid = $1", [managerid], (error, results) => {
+  pool.query('SELECT * FROM FDSManagers WHERE managerid = $1', [managerid], (error, results) => {
     if (error) {
       throw error;
     }
@@ -31,7 +22,7 @@ const getFDSManagersById = (request, response) => {
 
 const createFDSManagers = (request, response) => {
   const managername = request.body.managername;
-  pool.query("INSERT INTO FDSManagers (managername) VALUES ($1) RETURNING *", [managername], (error, results) => {
+  pool.query('INSERT INTO FDSManagers (managername) VALUES ($1) RETURNING *', [managername], (error, results) => {
     if (error) {
       throw error;
     }
@@ -44,7 +35,7 @@ const updateFDSManagers = (request, response) => {
   const managername = request.body.managername;
 
   pool.query(
-    "UPDATE FDSManagers SET managername = $1 WHERE managerid = $2 RETURNING *",
+    'UPDATE FDSManagers SET managername = $1 WHERE managerid = $2 RETURNING *',
     [managername, managerid],
     (error, results) => {
       if (error) {
@@ -58,7 +49,7 @@ const updateFDSManagers = (request, response) => {
 const deleteFDSManagers = (request, response) => {
   const managerid = parseInt(request.params.managerid);
 
-  pool.query("DELETE FROM FDSManagers WHERE managerid = $1 RETURNING *", [managerid], (error, results) => {
+  pool.query('DELETE FROM FDSManagers WHERE managerid = $1 RETURNING *', [managerid], (error, results) => {
     if (error) {
       throw error;
     }

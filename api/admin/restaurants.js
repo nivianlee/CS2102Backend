@@ -1,13 +1,4 @@
-require('dotenv').config();
-const Pool = require('pg').Pool;
-
-const pool = new Pool({
-  user: process.env.USER,
-  host: process.env.HOST,
-  database: process.env.DATABASE,
-  password: process.env.PASSWORD,
-  port: process.env.PORT
-});
+const pool = require('../../pool.js');
 
 const getRestaurants = (request, response) => {
   pool.query('SELECT * FROM Restaurants ORDER BY restaurantName ASC', (error, results) => {
