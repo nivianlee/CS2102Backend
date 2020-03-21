@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const db = require('./queries');
 const customers = require('./api/customer/customers');
 const fdsManagers = require('./api/admin/fdsmanagers');
+const restaurants = require('./api/admin/restaurants');
 const foodItems = require('./api/common/fooditems');
 const app = express();
 const port = 3000;
@@ -33,6 +34,9 @@ app.get('/customers/:customerid', customers.getCustomerById);
 app.post('/customers', customers.createCustomer);
 app.put('/customers/:customerid', customers.updateCustomer);
 app.delete('/customers/:customerid', customers.deleteCustomer);
+
+// restaurant apis
+app.get('/restaurants', restaurants.getRestaurants);
 
 // fooditems apis
 app.get('/fooditems', foodItems.getFoodItems);

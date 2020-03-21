@@ -287,7 +287,11 @@ CREATE TABLE MWS(
 \copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
 \copy Applies(orderID, promotionID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
 \copy Contains(quantity, foodItemID, orderID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
-\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
+BEGIN;
+COPY Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) FROM '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
+SELECT setval('customers_customerid_seq ', max(customerID)) FROM Customers;
+END;
+-- \copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
 \copy CreditCards(creditCardNumber) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
 \copy Requests(orderID, customerID, paymentID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
