@@ -5,6 +5,7 @@ const customers = require('./api/customer/customers');
 const fdsManagers = require('./api/admin/fdsmanagers');
 const restaurants = require('./api/admin/restaurants');
 const foodItems = require('./api/common/fooditems');
+const orders = require('./api/common/orders');
 const app = express();
 const port = 3000;
 
@@ -35,12 +36,15 @@ app.post('/customers', customers.createCustomer);
 app.put('/customers/:customerid', customers.updateCustomer);
 app.delete('/customers/:customerid', customers.deleteCustomer);
 
-// restaurant apis
+// common: restaurant apis
 app.get('/restaurants', restaurants.getRestaurants);
 
-// fooditems apis
+// common: fooditems apis
 app.get('/fooditems', foodItems.getFoodItems);
 app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId);
+
+// common: orders api
+app.get('/orders/:customerid', orders.getAllOrdersByCusId);
 
 // admin: fdsManagers
 app.get('/fdsManagers', fdsManagers.getFDSManagers);
