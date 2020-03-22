@@ -20,6 +20,7 @@ const getCustomerById = (request, response) => {
   });
 };
 
+// include token when creating user
 const createCustomer = (request, response) => {
   const data = {
     name: request.body.customerName,
@@ -91,7 +92,123 @@ const deleteCustomer = (request, response) => {
   });
 };
 
+// == LOGIN AUTHENTICATION ==
+// verify login details
+// will change depending on how login is done (token or without token)
+const verifyUser = (request, response) => {
+  const email = request.body.customerEmail;
+  const password = request.body.customerPassword;
+
+  const values = [email, password];
+
+  pool.query('SELECT * FROM Customers WHERE customerEmail = $1 and customerPassword = $2', values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    if (results.rows.length === 0) {
+      // unsuccessful login
+      response.status(400).send({ message: 'fail' });
+    } else {
+      // successful login
+      response.status(200).send({ message: 'success' });
+    }
+  });
+};
+
+// // == VIEW CUSTOMER PROFILE ==
+// // update/remove customer details =s> updateCustomer
+// // retrieve customer details w/o pass
+// const getCustomerDetails = (request, response) => {
+//   const customerId = parseInt(request.params.customerId);
+
+//   pool.query(
+//     'SELECT customerName, customerEmail, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated FROM Customers WHERE customerID = $1',
+//     [customerId],
+//     (error, results) => {
+//       if (error) {
+//         throw error;
+//       }
+
+//       response.status(200).json(results.row);
+//     }
+//   );
+// };
+
+// // retrieve customer additional addresses
+// const getCustomerAddresses = (request, response) => {
+//   const customerId = parseInt(request.param.customerId);
+
+//   pool.query('SELECT * FROM Addresses WHERE customerID = $1', [customerId], (error, results) => {
+//     if (error) {
+//       throw error;
+//     }
+
+//     response.status(200).json(results.row);
+//   });
+// };
+
+// // retrieve customer saved addresses
+// const getCustomerAddresses = (request, response) => {
+//   const customerId = parseInt(request.param.customerId);
+
+//   pool.query(
+//     'SELECT * FROM Addresses INNER JOIN SavedAddresses ON (address) WHERE customerID = $1',
+//     [customerId],
+//     (error, results) => {
+//       if (error) {
+//         throw error;
+//       }
+
+//       response.status(200).json(results.row);
+//     }
+//   );
+// };
+
+// // retrieve customer recent addresses
+// const getCustomerAddresses = (request, response) => {
+//   const customerId = parseInt(request.param.customerId);
+
+//   pool.query(
+//     'SELECT * FROM Addresses INNER JOIN RecentAddresses ON (address) WHERE customerID = $1',
+//     [customerId],
+//     (error, results) => {
+//       if (error) {
+//         throw error;
+//       }
+
+//       response.status(200).json(results.row);
+//     }
+//   );
+// };
+
+// // retrieve customer credit cards
+// const getCustomerCreditCards = (request, response) => {
+//   const customerId = parseInt(request.param.customerId);
+
+//   pool.query('SELECT * FROM Owns WHERE customerID = $1', [customerId], (error, results) => {
+//     if (error) {
+//       throw error;
+//     }
+
+//     response.status(200).json(results.row);
+//   });
+// };
+
+// // VIEW REVIEWS/POSTS
+// const getReviewsByOrderId = (request, response) => {
+//   const orderId = parseInt(request.param.orderId);
+
+//   pool.query('SELECT * FROM Reviews WHERE OrderID = $1', [orderId], (error, results) => {
+//     if (error) {
+//       throw error;
+//     }
+
+//     response.status(200).json(results);
+//   });
+// };
+
 module.exports = {
+  verifyUser,
   getCustomers,
   getCustomerById,
   createCustomer,

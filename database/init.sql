@@ -222,10 +222,14 @@ CREATE TABLE Addresses (
 );
 
 CREATE TABLE SavedAddresses (
+    -- might have some issue here without a link to the customerID
+    -- does multiple customerID having the same address cause an issue? if not, then should be fine
     address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
 );
 
 CREATE TABLE RecentAddresses (
+    -- might have some issue here without a link to the customerID
+    -- does multiple customerID having the same address cause an issue? if not, then should be fine
     address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
 );
 

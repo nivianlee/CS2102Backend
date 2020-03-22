@@ -30,6 +30,7 @@ app.get('/', (request, response) => {
 app.get('/users', db.getUsers);
 
 // customer apis
+app.post('/customer/login', customers.verifyUser);
 app.get('/customers', customers.getCustomers);
 app.get('/customers/:customerid', customers.getCustomerById);
 app.post('/customers', customers.createCustomer);
