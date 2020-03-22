@@ -110,7 +110,7 @@ const verifyUser = (request, response) => {
       response.status(400).send({ message: 'fail' });
     } else {
       // successful login
-      response.status(200).send({ message: 'success' });
+      response.status(200).json(results.rows);
     }
   });
 };
