@@ -48,6 +48,7 @@ const createCustomer = (request, response) => {
     values,
     (error, results) => {
       if (error) {
+        response.status(401).send({ message: 'This email or phone number is already exist!' });
         throw error;
       }
 
