@@ -206,6 +206,50 @@ const verifyUser = (request, response) => {
 //     response.status(200).json(results);
 //   });
 // };
+const getAddresses = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+
+  pool.query(
+    'SELECT distinct address, customerID FROM Addresses WHERE customerId = $1',
+    [customerid],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).json(results.rows);
+    }
+  );
+};
+
+const getRecentAddresses = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+
+  pool.query(
+    'SELECT distinct address, customerID FROM Addresses natural join RecentAddresses WHERE customerId = $1',
+    [customerid],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).json(results.rows);
+    }
+  );
+};
+
+const getSavedAddresses = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+
+  pool.query(
+    'SELECT distinct address, customerID FROM Addresses natural join SavedAddresses WHERE customerId = $1',
+    [customerid],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).json(results.rows);
+    }
+  );
+};
 
 module.exports = {
   verifyUser,
@@ -213,5 +257,8 @@ module.exports = {
   getCustomerById,
   createCustomer,
   updateCustomer,
-  deleteCustomer
+  deleteCustomer,
+  getAddresses,
+  getRecentAddresses,
+  getSavedAddresses
 };
