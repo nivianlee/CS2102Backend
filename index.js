@@ -30,6 +30,9 @@ app.get('/users', db.getUsers);
 // customer apis
 app.get('/customers', customers.getCustomers);
 app.get('/customers/:customerid', customers.getCustomerById);
+app.get('/customers/:customerid/addresses', customers.getAddresses);
+app.get('/customers/:customerid/recentaddresses', customers.getRecentAddresses);
+app.get('/customers/:customerid/savedaddresses', customers.getSavedAddresses);
 app.post('/customers', customers.createCustomer);
 app.put('/customers/:customerid', customers.updateCustomer);
 app.delete('/customers/:customerid', customers.deleteCustomer);
