@@ -1,6 +1,5 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const db = require('./queries');
 const customers = require('./api/customer/customers');
 const fdsManagers = require('./api/admin/fdsmanagers');
 const foodItems = require('./api/common/fooditems');
@@ -24,8 +23,6 @@ app.use(
 app.get('/', (request, response) => {
   response.json({ info: 'Node.js, Express, and Postgres API' });
 });
-
-app.get('/users', db.getUsers);
 
 // customer apis
 app.get('/customers', customers.getCustomers);
