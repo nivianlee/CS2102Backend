@@ -159,7 +159,7 @@ CREATE TABLE Orders (
 );
 
 CREATE TABLE CreditCards (
-    creditCardNumber VARCHAR(16) PRIMARY KEY
+    creditCardNumber VARCHAR(32) PRIMARY KEY
 );
 
 -- Absorbs PaidBy, Uses
@@ -169,7 +169,7 @@ CREATE TABLE CreditCards (
 CREATE TABLE Payments (
     paymentID SERIAL UNIQUE,
     orderID INTEGER UNIQUE REFERENCES Orders,
-    creditCardNumber VARCHAR(16) REFERENCES CreditCards,
+    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
     useCash BOOLEAN,
     useCreditCard BOOLEAN,
     useRewardPoints BOOLEAN,
@@ -210,7 +210,7 @@ CREATE TABLE Requests (
 
 CREATE TABLE Owns (
     customerID SERIAL REFERENCES Customers,
-    creditCardNumber VARCHAR(16) REFERENCES CreditCards,
+    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
     PRIMARY KEY(customerID, creditCardNumber)
 );
 
@@ -290,7 +290,7 @@ CREATE TABLE MWS(
 \copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
 \copy CreditCards(creditCardNumber) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
-\copy Requests(orderID, customerID, paymentID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
+\copy Requests(orderID, paymentID, customerID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
 \copy Owns(customerID, creditCardNumber) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Owns.csv'DELIMITER ',' CSV HEADER;
 \copy Addresses(address, addressTimeStamp, customerID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
 \copy SavedAddresses(address) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
