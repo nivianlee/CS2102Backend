@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const customers = require('./api/customer/customers');
 const fdsManagers = require('./api/admin/fdsmanagers');
+const restaurants = require('./api/admin/restaurants');
 const foodItems = require('./api/common/fooditems');
 const app = express();
 const port = 3000;
@@ -44,6 +45,12 @@ app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagersById);
 app.post('/fdsManagers', fdsManagers.createFDSManagers);
 app.post('/fdsManagers/:managerid', fdsManagers.updateFDSManagers);
 app.delete('/fdsManagers/:managerid', fdsManagers.deleteFDSManagers);
+
+// admin: restaurant
+app.get('/restaurants', restaurants.getRestaurants);
+app.get('/restaurants/:restaurantid', restaurants.getRestaurantById);
+app.get('/restaurants/restaurantname/:restaurantname', restaurants.getRestaurantByName);
+app.get('/restaurants/restaurantlocation/:restaurantlocation', restaurants.getRestaurantByLocation);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
