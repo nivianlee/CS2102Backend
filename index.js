@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const customers = require('./api/customer/customers');
 const fdsManagers = require('./api/admin/fdsmanagers');
 const restaurants = require('./api/admin/restaurants');
+const restaurantstaff = require('./api/admin/restaurantstaff');
 const foodItems = require('./api/common/fooditems');
 const app = express();
 const port = 3000;
@@ -51,6 +52,11 @@ app.get('/restaurants', restaurants.getRestaurants);
 app.get('/restaurants/:restaurantid', restaurants.getRestaurantById);
 app.get('/restaurants/restaurantname/:restaurantname', restaurants.getRestaurantByName);
 app.get('/restaurants/restaurantlocation/:restaurantlocation', restaurants.getRestaurantByLocation);
+
+// admin: restaurantStaff
+app.post('/restaurantstaff', restaurantstaff.createRestaurantStaff);
+app.put('/restaurantstaff/:restaurantstaffid', restaurantstaff.updateRestaurantStaff);
+app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaurantStaff);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
