@@ -54,8 +54,20 @@ app.get('/restaurants/restaurantname/:restaurantname', restaurants.getRestaurant
 app.get('/restaurants/restaurantlocation/:restaurantlocation', restaurants.getRestaurantByLocation);
 
 // admin: restaurantStaff
+app.get('/restaurantstaff/orders/:restaurantstaffid', restaurantstaff.getAllCompletedOrders);
+app.get('/restaurantstaff/monthlyorders/:year/:month/:restaurantstaffid', restaurantstaff.getMonthlyCompletedOrders);
+app.get(
+  '/restaurantstaff/monthlystatistics/:year/:month/:restaurantstaffid',
+  restaurantstaff.getMonthlyCompletedOrdersStatistics
+);
+app.get(
+  '/restaurantstaff/monthlyfavourites/:year/:month/:restaurantstaffid',
+  restaurantstaff.getMonthlyFavouriteFoodItems
+);
 app.post('/restaurantstaff', restaurantstaff.createRestaurantStaff);
+app.post('/restaurantstaff/fooditems/:restaurantstaffid', restaurantstaff.createFoodItem);
 app.put('/restaurantstaff/:restaurantstaffid', restaurantstaff.updateRestaurantStaff);
+app.put('/restaurantstaff/fooditems/:restaurantstaffid', restaurantstaff.updateFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaurantStaff);
 
 app.listen(port, () => {
