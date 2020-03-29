@@ -315,3 +315,30 @@ select setval('payments_paymentid_seq',(select max(paymentid) from Payments));
 select setval('requests_orderid_seq',(select max(orderid) from Requests));
 select setval('customers_customerid_seq',(select max(customerid) from Customers));
 select setval('owns_customerid_seq',(select max(customerid) from Owns));
+
+-- Additional Views
+create view CustPerMonth(month, year, numCustCreated) as
+      (SELECT to_char(to_timestamp(res.month::text,'MM'), 'Mon') as month, year, numCustCreated  
+       FROM (SELECT extract(month from dateCreated) as month,
+                    extract(year from dateCreated) as year, 
+                    count(*) as numCustCreated
+             FROM Customers C 
+             GROUP BY 1, 2 
+             ORDER BY year, month) as res);
+
+create view OrderCosts(orderid,totalCostOfOrder) as
+       (select orderid, sum(price*quantity) as totalCostOfOrder
+        from contains join fooditems using (fooditemid) 
+        group by orderid 
+        order by orderid);
+
+create view TotalCostPerMonth(month, year, totalOrders, totalOrdersSum) as 
+        (SELECT to_char(to_timestamp(res.month::text, 'MM'), 'Mon') as month, year, totalOrders, totalOrdersSum
+         FROM (SELECT extract(month from O.orderplacedtimestamp::date) as month,
+                      extract(year from O.orderplacedtimestamp::date) as year,
+                      count(*) as totalOrders,
+                      sum(totalCostOfOrder) as totalOrdersSum
+               FROM Orders O join OrderCosts using (orderid) 
+               GROUP BY 1, 2
+               ORDER BY year, month) as res);
+               
