@@ -1,4 +1,4 @@
-promotionID,startDate,endDate
+promotionID,startTimeStamp,endTimeStamp
 1,1/1/2020 00:00,1/1/2020 23:59
 2,2/1/2020 00:00,2/1/2020 23:59
 3,3/1/2020 00:00,3/1/2020 23:59

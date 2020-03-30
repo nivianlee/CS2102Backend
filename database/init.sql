@@ -34,8 +34,8 @@ DROP TABLE IF EXISTS MWS CASCADE;
 
 CREATE TABLE Promotions (
     promotionID INTEGER PRIMARY KEY,
-    startDate TIMESTAMP, 
-    endDate TIMESTAMP
+    startTimeStamp TIMESTAMP, 
+    endTimeStamp TIMESTAMP
 );
 
 CREATE TABLE TargettedPromoCode (
@@ -272,7 +272,7 @@ CREATE TABLE MWS(
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
 \copy RestaurantStaff(restaurantStaffID, restaurantStaffName, restaurantID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
 \copy Manages(restaurantStaffID, foodItemID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
-\copy Promotions(promotionID, startDate, endDate) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
+\copy Promotions(promotionID, startTimeStamp, endTimeStamp) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
 \copy Offers(restaurantID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Offers.csv' DELIMITER ',' CSV HEADER;
 \copy TargettedPromoCode(promotionID, promotionDetails) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/TargettedPromoCode.csv' DELIMITER ',' CSV HEADER;
 \copy Percentage(promotionID, percentageAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Percentage.csv' DELIMITER ',' CSV HEADER;

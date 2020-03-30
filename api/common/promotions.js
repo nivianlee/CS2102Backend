@@ -12,7 +12,7 @@ const getPromotions = (request, response) => {
 const getPromotionsByID = (request, response) => {
   const promotionid = parseInt(request.params.promotionid);
   const query = `
-    SELECT P.promotionID, P.startDate, P.endDate, promotionDetails, percentageAmount, absoluteAmount, deliveryAmount
+    SELECT P.promotionID, P.startTimeStamp, P.endTimeStamp, promotionDetails, percentageAmount, absoluteAmount, deliveryAmount
     FROM Promotions P 
     LEFT JOIN TargettedPromoCode USING (promotionID) 
     LEFT JOIN Percentage USING (promotionID) 
