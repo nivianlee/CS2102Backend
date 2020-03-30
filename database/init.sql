@@ -34,8 +34,8 @@ DROP TABLE IF EXISTS MWS CASCADE;
 
 CREATE TABLE Promotions (
     promotionID INTEGER PRIMARY KEY,
-    startDate DATE, 
-    endDate DATE
+    startDate TIMESTAMP, 
+    endDate TIMESTAMP
 );
 
 CREATE TABLE TargettedPromoCode (
@@ -322,4 +322,4 @@ FROM (RestaurantStaff R JOIN FoodItems F ON R.restaurantID = F.restaurantID)
 NATURAL JOIN Contains C 
 NATURAL JOIN Orders O 
 WHERE O.status = true 
-ORDER BY O.orderPlacedTimeStamp DESC
+ORDER BY O.orderPlacedTimeStamp DESC;
