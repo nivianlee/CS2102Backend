@@ -7,7 +7,7 @@ const foodItems = require('./api/common/fooditems');
 const app = express();
 const port = 3000;
 
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
@@ -22,10 +22,11 @@ app.use(
 );
 
 app.get('/', (request, response) => {
-  response.json({ info: 'Node.js, Express, and Postgres API' });
+  response.json({
+    info: 'Node.js, Express, and Postgres API'
+  });
 });
 
-app.get('/users', db.getUsers);
 
 // customer apis
 app.get('/customers', customers.getCustomers);
@@ -42,6 +43,10 @@ app.get('/fooditems', foodItems.getFoodItems);
 app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId);
 
 // admin: fdsManagers
+app.get('/fdsManagers/summaryOne', fdsManagers.getFDSManagerSummaryOne);
+app.get('/fdsManagers/summaryTwo', fdsManagers.getFDSManagerSummaryTwo);
+app.get('/fdsManagers/summaryThree', fdsManagers.getFDSManagerSummaryThree);
+app.get('/fdsManagers/summaryFour', fdsManagers.getFDSManagerSummaryFour);
 app.get('/fdsManagers', fdsManagers.getFDSManagers);
 app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagersById);
 app.post('/fdsManagers', fdsManagers.createFDSManagers);
