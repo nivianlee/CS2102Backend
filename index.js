@@ -67,6 +67,7 @@ app.get(
   '/restaurantstaff/monthlyfavourites/:year/:month/:restaurantstaffid',
   restaurantstaff.getMonthlyFavouriteFoodItems
 );
+app.get('/restaurantstaff/promotionstatistics/:restaurantstaffid', restaurantstaff.getPromotionalCampaignsStatistics);
 app.post('/restaurantstaff', restaurantstaff.createRestaurantStaff);
 app.post('/restaurantstaff/fooditems/:restaurantstaffid', restaurantstaff.createFoodItem);
 app.put('/restaurantstaff/:restaurantstaffid', restaurantstaff.updateRestaurantStaff);

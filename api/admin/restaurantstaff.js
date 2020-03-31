@@ -99,9 +99,10 @@ const updateFoodItem = (request, response) => {
 const getAllCompletedOrders = (request, response) => {
   const restaurantstaffid = request.params.restaurantstaffid;
   const query = `
-    SELECT DISTINCT orderID, orderPlacedTimeStamp, foodItemID, price, quantity, restaurantID
-    FROM TotalCompletedOrders
-    WHERE restaurantID = $1
+    SELECT DISTINCT T.orderID, T.orderPlacedTimeStamp, T.foodItemID, T.price, T.quantity, T.restaurantID
+    FROM TotalCompletedOrders T, RestaurantStaff R
+    WHERE R.restaurantStaffID = $1
+    AND T.restaurantID = R.restaurantID
   `;
 
   pool.query(query, [restaurantstaffid], (error, results) => {
@@ -117,9 +118,10 @@ const getMonthlyCompletedOrders = (request, response) => {
   const year = request.params.year;
   const month = request.params.month;
   const query = `
-      SELECT DISTINCT orderID, orderPlacedTimeStamp, foodItemID, foodItemName, (price * quantity) AS cost, restaurantID
-      FROM TotalCompletedOrders
-      WHERE restaurantID = $1
+      SELECT DISTINCT T.orderID, T.orderPlacedTimeStamp, T.foodItemID, T.foodItemName, (T.price * T.quantity) AS cost, T.restaurantID
+      FROM TotalCompletedOrders T, RestaurantStaff R
+      WHERE R.restaurantStaffID = $1
+      AND T.restaurantID = R.restaurantID
       AND EXTRACT(YEAR FROM orderPlacedTimeStamp) = $2 
       AND EXTRACT(MONTH FROM orderPlacedTimeStamp) = $3
   `;
@@ -138,9 +140,10 @@ const getMonthlyCompletedOrdersStatistics = (request, response) => {
   const month = request.params.month;
   const query = `
     WITH MonthlyOrders AS (
-      SELECT DISTINCT orderID, orderPlacedTimeStamp, foodItemID, foodItemName, (price * quantity) AS cost, restaurantID
-      FROM TotalCompletedOrders
-      WHERE restaurantID = $1
+      SELECT DISTINCT T.orderID, T.orderPlacedTimeStamp, T.foodItemID, T.foodItemName, (T.price * T.quantity) AS cost, T.restaurantID
+      FROM TotalCompletedOrders T, RestaurantStaff R
+      WHERE R.restaurantStaffID = $1
+      AND T.restaurantID = R.restaurantID
       AND EXTRACT(YEAR FROM orderPlacedTimeStamp) = $2 
       AND EXTRACT(MONTH FROM orderPlacedTimeStamp) = $3
     )
@@ -162,9 +165,10 @@ const getMonthlyFavouriteFoodItems = (request, response) => {
   const month = request.params.month;
   const query = `
     WITH MonthlyOrders AS (
-      SELECT DISTINCT orderID, orderPlacedTimeStamp, foodItemID, foodItemName, (price * quantity) AS cost, restaurantID
-      FROM TotalCompletedOrders
-      WHERE restaurantID = $1
+      SELECT DISTINCT T.orderID, T.orderPlacedTimeStamp, T.foodItemID, T.foodItemName, (T.price * T.quantity) AS cost, T.restaurantID
+      FROM TotalCompletedOrders T, RestaurantStaff R
+      WHERE R.restaurantStaffID = $1
+      AND T.restaurantID = R.restaurantID
       AND EXTRACT(YEAR FROM orderPlacedTimeStamp) = $2 
       AND EXTRACT(MONTH FROM orderPlacedTimeStamp) = $3
     ),
@@ -187,6 +191,33 @@ const getMonthlyFavouriteFoodItems = (request, response) => {
   });
 };
 
+const getPromotionalCampaignsStatistics = (request, response) => {
+  const restaurantstaffid = request.params.restaurantstaffid;
+  const query = `
+    WITH RestaurantOrders AS (
+      SELECT DISTINCT T.orderID, T.orderPlacedTimeStamp, T.foodItemID, T.price, T.quantity, T.restaurantID
+      FROM TotalCompletedOrders T, RestaurantStaff R
+      WHERE R.restaurantStaffID = $1
+      AND T.restaurantID = R.restaurantID
+    ),
+    PromotionalCampaignsStatistics AS (
+      SELECT DISTINCT P.promotionID, count(distinct orderID) as numOfOrders, (P.endTimeStamp - P.startTimeStamp) as duration
+      FROM Promotions P natural join (Applies A natural join RestaurantOrders R)
+      GROUP BY P.promotionID
+    )
+    SELECT DISTINCT P.promotionID, S.numOfOrders, S.duration, S.numOfOrders / (EXTRACT(HOUR FROM date_trunc('hour', S.duration + '30 minute')) / 24) as ordersperday
+    FROM Promotions P natural join PromotionalCampaignsStatistics S
+    ORDER BY P.promotionID ASC;
+  `;
+
+  pool.query(query, [restaurantstaffid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
 module.exports = {
   createRestaurantStaff,
   updateRestaurantStaff,
@@ -196,5 +227,6 @@ module.exports = {
   getAllCompletedOrders,
   getMonthlyCompletedOrders,
   getMonthlyCompletedOrdersStatistics,
-  getMonthlyFavouriteFoodItems
+  getMonthlyFavouriteFoodItems,
+  getPromotionalCampaignsStatistics
 };
