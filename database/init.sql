@@ -159,7 +159,7 @@ CREATE TABLE Orders (
 );
 
 CREATE TABLE CreditCards (
-    creditCardNumber VARCHAR(16) PRIMARY KEY
+    creditCardNumber VARCHAR(32) PRIMARY KEY
 );
 
 -- Absorbs PaidBy, Uses
@@ -169,7 +169,7 @@ CREATE TABLE CreditCards (
 CREATE TABLE Payments (
     paymentID SERIAL UNIQUE,
     orderID INTEGER UNIQUE REFERENCES Orders,
-    creditCardNumber VARCHAR(16) REFERENCES CreditCards,
+    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
     useCash BOOLEAN,
     useCreditCard BOOLEAN,
     useRewardPoints BOOLEAN,
@@ -210,7 +210,7 @@ CREATE TABLE Requests (
 
 CREATE TABLE Owns (
     customerID SERIAL REFERENCES Customers,
-    creditCardNumber VARCHAR(16) REFERENCES CreditCards,
+    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
     PRIMARY KEY(customerID, creditCardNumber)
 );
 
@@ -290,7 +290,7 @@ CREATE TABLE MWS(
 \copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
 \copy CreditCards(creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
-\copy Requests(orderID, customerID, paymentID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
+\copy Requests(orderID, paymentID, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
 \copy Owns(customerID, creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Owns.csv'DELIMITER ',' CSV HEADER;
 \copy Addresses(address, addressTimeStamp, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
 \copy SavedAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
@@ -316,6 +316,7 @@ select setval('requests_orderid_seq',(select max(orderid) from Requests));
 select setval('customers_customerid_seq',(select max(customerid) from Customers));
 select setval('owns_customerid_seq',(select max(customerid) from Owns));
 
+-- Additional Views
 create view TotalCompletedOrders(orderID, orderPlacedTimeStamp, foodItemID, foodItemName, price, quantity, restaurantID) as
 SELECT DISTINCT O.OrderID, O.orderPlacedTimeStamp, F.foodItemID, F.foodItemName, F.price, C.quantity, F.restaurantID 
 FROM (RestaurantStaff R JOIN FoodItems F ON R.restaurantID = F.restaurantID) 
@@ -323,3 +324,29 @@ NATURAL JOIN Contains C
 NATURAL JOIN Orders O 
 WHERE O.status = true 
 ORDER BY O.orderPlacedTimeStamp DESC;
+
+create view CustPerMonth(month, year, numCustCreated) as
+    (SELECT to_char(to_timestamp(res.month::text,'MM'), 'Mon') as month, year, numCustCreated  
+    FROM (SELECT extract(month from dateCreated) as month,
+                extract(year from dateCreated) as year, 
+                count(*) as numCustCreated
+            FROM Customers C 
+            GROUP BY 1, 2 
+            ORDER BY year, month) as res);
+
+create view OrderCosts(orderid,totalCostOfOrder) as
+       (select orderid, sum(price*quantity) as totalCostOfOrder
+        from contains join fooditems using (fooditemid) 
+        group by orderid 
+        order by orderid);
+
+create view TotalCostPerMonth(month, year, totalOrders, totalOrdersSum) as 
+        (SELECT to_char(to_timestamp(res.month::text, 'MM'), 'Mon') as month, year, totalOrders, totalOrdersSum
+         FROM (SELECT extract(month from O.orderplacedtimestamp::date) as month,
+                      extract(year from O.orderplacedtimestamp::date) as year,
+                      count(*) as totalOrders,
+                      sum(totalCostOfOrder) as totalOrdersSum
+               FROM Orders O join OrderCosts using (orderid) 
+               GROUP BY 1, 2
+               ORDER BY year, month) as res);
+               

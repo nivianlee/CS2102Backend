@@ -24,7 +24,9 @@ app.use(
 );
 
 app.get('/', (request, response) => {
-  response.json({ info: 'Node.js, Express, and Postgres API' });
+  response.json({
+    info: 'Node.js, Express, and Postgres API'
+  });
 });
 
 // customer apis
@@ -44,6 +46,10 @@ app.get('/promotions', promotions.getPromotions);
 app.get('/promotions/:promotionid', promotions.getPromotionsByID);
 
 // admin: fdsManagers
+app.get('/fdsManagers/summaryOne', fdsManagers.getFDSManagerSummaryOne);
+app.get('/fdsManagers/summaryTwo', fdsManagers.getFDSManagerSummaryTwo);
+app.get('/fdsManagers/summaryThree', fdsManagers.getFDSManagerSummaryThree);
+app.get('/fdsManagers/summaryFour', fdsManagers.getFDSManagerSummaryFour);
 app.get('/fdsManagers', fdsManagers.getFDSManagers);
 app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagersById);
 app.post('/fdsManagers', fdsManagers.createFDSManagers);
