@@ -59,24 +59,24 @@ app.delete('/fdsManagers/:managerid', fdsManagers.deleteFDSManagers);
 // admin: restaurant
 app.get('/restaurants', restaurants.getRestaurants);
 app.get('/restaurants/:restaurantid', restaurants.getRestaurantById);
-app.get('/restaurants/restaurantname/:restaurantname', restaurants.getRestaurantByName);
-app.get('/restaurants/restaurantlocation/:restaurantlocation', restaurants.getRestaurantByLocation);
+app.get('/restaurants/restaurantName/:restaurantname', restaurants.getRestaurantByName);
+app.get('/restaurants/restaurantLocation/:restaurantlocation', restaurants.getRestaurantByLocation);
 
 // admin: restaurantStaff
 app.get('/restaurantstaff/orders/:restaurantstaffid', restaurantstaff.getAllCompletedOrders);
-app.get('/restaurantstaff/monthlyorders/:year/:month/:restaurantstaffid', restaurantstaff.getMonthlyCompletedOrders);
+app.get('/restaurantstaff/monthlyOrders/:year/:month/:restaurantstaffid', restaurantstaff.getMonthlyCompletedOrders);
 app.get(
-  '/restaurantstaff/monthlystatistics/:year/:month/:restaurantstaffid',
+  '/restaurantstaff/monthlyStatistics/:year/:month/:restaurantstaffid',
   restaurantstaff.getMonthlyCompletedOrdersStatistics
 );
 app.get(
-  '/restaurantstaff/monthlyfavourites/:year/:month/:restaurantstaffid',
+  '/restaurantstaff/monthlyFavourites/:year/:month/:restaurantstaffid',
   restaurantstaff.getMonthlyFavouriteFoodItems
 );
-app.get('/restaurantstaff/promotionstatistics/:restaurantstaffid', restaurantstaff.getPromotionalCampaignsStatistics);
+app.get('/restaurantstaff/promotionStatistics/:restaurantstaffid', restaurantstaff.getPromotionalCampaignsStatistics);
 app.post('/restaurantstaff', restaurantstaff.createRestaurantStaff);
 app.post('/restaurantstaff/fooditems/:restaurantstaffid', restaurantstaff.createFoodItem);
-app.put('/restaurantstaff/:restaurantstaffid', restaurantstaff.updateRestaurantStaff);
+app.put('/restaurantstaff/:restauranttaffid', restaurantstaff.updateRestaurantStaff);
 app.put('/restaurantstaff/fooditems/:restaurantstaffid', restaurantstaff.updateFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaurantStaff);
 
