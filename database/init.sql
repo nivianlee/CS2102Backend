@@ -289,7 +289,29 @@ CREATE CONSTRAINT TRIGGER payment_trigger
   FOR EACH ROW 
 	EXECUTE FUNCTION check_payment_constraint();
 
+CREATE OR REPLACE FUNCTION check_total_participation_orders_in_contains() RETURNS TRIGGER 
+	AS $$ 
+DECLARE 
+  invalid_order INTEGER;
+BEGIN
+	SELECT O1.orderid INTO invalid_order
+		FROM Orders O1
+		WHERE O1.orderid NOT IN
+			(SELECT DISTINCT orderid FROM Contains); 
 
+	IF invalid_order IS NOT NULL THEN 
+		RAISE exception 'Orderid: % does not exist in Contains ', invalid_order;
+	END IF;  
+  RETURN NULL;
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS contains_trigger ON Contains CASCADE;
+CREATE TRIGGER contains_trigger
+	AFTER UPDATE OF orderid OR INSERT  
+	ON Contains
+  	FOR EACH STATEMENT 
+    EXECUTE FUNCTION check_total_participation_orders_in_contains();
 
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
