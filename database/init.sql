@@ -267,6 +267,31 @@ CREATE TABLE MWS(
     PRIMARY KEY(mwsID,riderID,ftDayRangeID,dayOfWeekID,ftShiftID,ptWorkingHourID)   
 );
 
+-- Create triggers after defining schema
+CREATE OR REPLACE FUNCTION check_payment_constraint() RETURNS TRIGGER 
+	AS $$ 
+BEGIN
+	IF (NEW.useCash AND NOT NEW.useCreditCard AND NOT NEW.useRewardPoints) THEN 
+    RETURN NULL;
+	ELSIF NOT NEW.useCash AND NEW.useCreditCard AND NOT NEW.useRewardPoints THEN 
+    RETURN NULL;
+	ELSIF NOT NEW.useCash AND NOT NEW.useCreditCard AND NEW.useRewardPoints THEN
+    RETURN NULL;
+	ELSE 
+		RAISE exception 'paymentid % cannot have more than 1 payment type set as TRUE', NEW.paymentid;
+	END IF;  
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS payment_trigger ON Payments CASCADE;
+CREATE CONSTRAINT TRIGGER payment_trigger
+	AFTER UPDATE OF useCash, useRewardPoints, useCreditCard OR INSERT ON Payments
+  FOR EACH ROW 
+	EXECUTE FUNCTION check_payment_constraint();
+
+
+
+
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
