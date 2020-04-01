@@ -205,7 +205,7 @@ CREATE TABLE Requests (
     orderID SERIAL REFERENCES Orders(orderID),
     customerID INTEGER REFERENCES Customers(customerID),
     paymentID INTEGER REFERENCES Payments(paymentID),
-    PRIMARY KEY(orderID, customerID)
+    PRIMARY KEY(orderID, paymentID)
 );
 
 CREATE TABLE Owns (
@@ -266,6 +266,100 @@ CREATE TABLE MWS(
     ptWorkingHourID INTEGER NOT NULL REFERENCES PTWorkingHours,
     PRIMARY KEY(mwsID,riderID,ftDayRangeID,dayOfWeekID,ftShiftID,ptWorkingHourID)   
 );
+
+-- Create triggers after defining schema
+CREATE OR REPLACE FUNCTION check_payment_constraint() RETURNS TRIGGER 
+	AS $$ 
+BEGIN
+	IF (NEW.useCash AND NOT NEW.useCreditCard AND NOT NEW.useRewardPoints) THEN 
+    RETURN NULL;
+	ELSIF NOT NEW.useCash AND NEW.useCreditCard AND NOT NEW.useRewardPoints THEN 
+    RETURN NULL;
+	ELSIF NOT NEW.useCash AND NOT NEW.useCreditCard AND NEW.useRewardPoints THEN
+    RETURN NULL;
+	ELSE 
+		RAISE exception 'paymentid % cannot have more than 1 payment type set as TRUE', NEW.paymentid;
+	END IF;  
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS payment_trigger ON Payments CASCADE;
+CREATE CONSTRAINT TRIGGER payment_trigger
+	AFTER UPDATE OF useCash, useRewardPoints, useCreditCard OR INSERT ON Payments
+  FOR EACH ROW 
+	EXECUTE FUNCTION check_payment_constraint();
+
+CREATE OR REPLACE FUNCTION check_total_participation_orders_in_contains() RETURNS TRIGGER 
+	AS $$ 
+DECLARE 
+  invalid_order INTEGER;
+BEGIN
+	SELECT O1.orderid INTO invalid_order
+		FROM Orders O1
+		WHERE O1.orderid NOT IN
+			(SELECT DISTINCT orderid FROM Contains); 
+
+	IF invalid_order IS NOT NULL THEN 
+		RAISE exception 'Orderid: % does not exist in Contains ', invalid_order;
+	END IF;  
+  RETURN NULL;
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS contains_trigger ON Contains CASCADE;
+CREATE TRIGGER contains_trigger
+	AFTER UPDATE OF orderid OR INSERT  
+	ON Contains
+  	FOR EACH STATEMENT 
+    EXECUTE FUNCTION check_total_participation_orders_in_contains();
+
+CREATE OR REPLACE FUNCTION check_total_participation_payments_in_requests() RETURNS TRIGGER 
+	AS $$ 
+DECLARE 
+  invalid_payment INTEGER;
+BEGIN
+	SELECT P.paymentid INTO invalid_payment
+		FROM Payments P
+		WHERE P.paymentid NOT IN
+			(SELECT DISTINCT paymentid FROM Requests); 
+
+	IF invalid_payment IS NOT NULL THEN 
+		RAISE exception 'Paymentid: % does not exist in Requests ', invalid_payment;
+	END IF;  
+  RETURN NULL;
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS payments_in_requests_trigger ON Payments CASCADE;
+CREATE TRIGGER payments_in_requests_trigger
+	AFTER UPDATE OF paymentid OR INSERT  
+	ON Requests
+  	FOR EACH STATEMENT 
+    EXECUTE FUNCTION check_total_participation_payments_in_requests();
+
+CREATE OR REPLACE FUNCTION check_total_participation_orders_in_requests() RETURNS TRIGGER 
+	AS $$ 
+DECLARE 
+  invalid_order INTEGER;
+BEGIN
+	SELECT O.orderid INTO invalid_order
+		FROM Orders O
+		WHERE O.orderid NOT IN
+			(SELECT DISTINCT orderid FROM Requests); 
+
+	IF invalid_order IS NOT NULL THEN 
+		RAISE exception 'Orderid: % does not exist in Requests ', invalid_order;
+	END IF;  
+  RETURN NULL;
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS orders_in_requests_trigger ON Payments CASCADE;
+CREATE TRIGGER orders_in_requests_trigger
+	AFTER UPDATE OF orderid OR INSERT  
+	ON Requests
+  	FOR EACH STATEMENT 
+    EXECUTE FUNCTION check_total_participation_orders_in_requests();
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
