@@ -34,8 +34,8 @@ DROP TABLE IF EXISTS MWS CASCADE;
 
 CREATE TABLE Promotions (
     promotionID INTEGER PRIMARY KEY,
-    startDate DATE, 
-    endDate DATE
+    startTimeStamp TIMESTAMP, 
+    endTimeStamp TIMESTAMP
 );
 
 CREATE TABLE TargettedPromoCode (
@@ -71,7 +71,7 @@ CREATE TABLE FoodItems (
     foodItemID SERIAL PRIMARY KEY, -- enforces exactly 1
     foodItemName VARCHAR(50), 
     price NUMERIC(6, 2),
-    availabilityStatus BOOLEAN,
+    availabilityStatus BOOLEAN DEFAULT true,
     image VARCHAR(50),
     maxNumOfOrders INTEGER,
     category VARCHAR(50),
@@ -159,7 +159,7 @@ CREATE TABLE Orders (
 );
 
 CREATE TABLE CreditCards (
-    creditCardNumber VARCHAR(16) PRIMARY KEY
+    creditCardNumber VARCHAR(32) PRIMARY KEY
 );
 
 -- Absorbs PaidBy, Uses
@@ -169,7 +169,7 @@ CREATE TABLE CreditCards (
 CREATE TABLE Payments (
     paymentID SERIAL UNIQUE,
     orderID INTEGER UNIQUE REFERENCES Orders,
-    creditCardNumber VARCHAR(16) REFERENCES CreditCards,
+    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
     useCash BOOLEAN,
     useCreditCard BOOLEAN,
     useRewardPoints BOOLEAN,
@@ -205,12 +205,12 @@ CREATE TABLE Requests (
     orderID SERIAL REFERENCES Orders(orderID),
     customerID INTEGER REFERENCES Customers(customerID),
     paymentID INTEGER REFERENCES Payments(paymentID),
-    PRIMARY KEY(orderID, customerID)
+    PRIMARY KEY(orderID, paymentID)
 );
 
 CREATE TABLE Owns (
     customerID SERIAL REFERENCES Customers,
-    creditCardNumber VARCHAR(16) REFERENCES CreditCards,
+    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
     PRIMARY KEY(customerID, creditCardNumber)
 );
 
@@ -271,40 +271,134 @@ CREATE TABLE MWS(
     PRIMARY KEY(mwsID,riderID,ftDayRangeID,dayOfWeekID,ftShiftID,ptWorkingHourID)   
 );
 
+-- Create triggers after defining schema
+CREATE OR REPLACE FUNCTION check_payment_constraint() RETURNS TRIGGER 
+	AS $$ 
+BEGIN
+	IF (NEW.useCash AND NOT NEW.useCreditCard AND NOT NEW.useRewardPoints) THEN 
+    RETURN NULL;
+	ELSIF NOT NEW.useCash AND NEW.useCreditCard AND NOT NEW.useRewardPoints THEN 
+    RETURN NULL;
+	ELSIF NOT NEW.useCash AND NOT NEW.useCreditCard AND NEW.useRewardPoints THEN
+    RETURN NULL;
+	ELSE 
+		RAISE exception 'paymentid % cannot have more than 1 payment type set as TRUE', NEW.paymentid;
+	END IF;  
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS payment_trigger ON Payments CASCADE;
+CREATE CONSTRAINT TRIGGER payment_trigger
+	AFTER UPDATE OF useCash, useRewardPoints, useCreditCard OR INSERT ON Payments
+  FOR EACH ROW 
+	EXECUTE FUNCTION check_payment_constraint();
+
+CREATE OR REPLACE FUNCTION check_total_participation_orders_in_contains() RETURNS TRIGGER 
+	AS $$ 
+DECLARE 
+  invalid_order INTEGER;
+BEGIN
+	SELECT O1.orderid INTO invalid_order
+		FROM Orders O1
+		WHERE O1.orderid NOT IN
+			(SELECT DISTINCT orderid FROM Contains); 
+
+	IF invalid_order IS NOT NULL THEN 
+		RAISE exception 'Orderid: % does not exist in Contains ', invalid_order;
+	END IF;  
+  RETURN NULL;
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS contains_trigger ON Contains CASCADE;
+CREATE TRIGGER contains_trigger
+	AFTER UPDATE OF orderid OR INSERT  
+	ON Contains
+  	FOR EACH STATEMENT 
+    EXECUTE FUNCTION check_total_participation_orders_in_contains();
+
+CREATE OR REPLACE FUNCTION check_total_participation_payments_in_requests() RETURNS TRIGGER 
+	AS $$ 
+DECLARE 
+  invalid_payment INTEGER;
+BEGIN
+	SELECT P.paymentid INTO invalid_payment
+		FROM Payments P
+		WHERE P.paymentid NOT IN
+			(SELECT DISTINCT paymentid FROM Requests); 
+
+	IF invalid_payment IS NOT NULL THEN 
+		RAISE exception 'Paymentid: % does not exist in Requests ', invalid_payment;
+	END IF;  
+  RETURN NULL;
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS payments_in_requests_trigger ON Payments CASCADE;
+CREATE TRIGGER payments_in_requests_trigger
+	AFTER UPDATE OF paymentid OR INSERT  
+	ON Requests
+  	FOR EACH STATEMENT 
+    EXECUTE FUNCTION check_total_participation_payments_in_requests();
+
+CREATE OR REPLACE FUNCTION check_total_participation_orders_in_requests() RETURNS TRIGGER 
+	AS $$ 
+DECLARE 
+  invalid_order INTEGER;
+BEGIN
+	SELECT O.orderid INTO invalid_order
+		FROM Orders O
+		WHERE O.orderid NOT IN
+			(SELECT DISTINCT orderid FROM Requests); 
+
+	IF invalid_order IS NOT NULL THEN 
+		RAISE exception 'Orderid: % does not exist in Requests ', invalid_order;
+	END IF;  
+  RETURN NULL;
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS orders_in_requests_trigger ON Payments CASCADE;
+CREATE TRIGGER orders_in_requests_trigger
+	AFTER UPDATE OF orderid OR INSERT  
+	ON Requests
+  	FOR EACH STATEMENT 
+    EXECUTE FUNCTION check_total_participation_orders_in_requests();
+
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
-\copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
-\copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
-\copy RestaurantStaff(restaurantStaffID, restaurantStaffName, restaurantID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
-\copy Manages(restaurantStaffID, foodItemID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
-\copy Promotions(promotionID, startDate, endDate) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
-\copy Offers(restaurantID, promotionID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Offers.csv' DELIMITER ',' CSV HEADER;
-\copy TargettedPromoCode(promotionID, promotionDetails) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/TargettedPromoCode.csv' DELIMITER ',' CSV HEADER;
-\copy Percentage(promotionID, percentageAmount) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Percentage.csv' DELIMITER ',' CSV HEADER;
-\copy Amount(promotionID, absoluteAmount) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Amount.csv' DELIMITER ',' CSV HEADER;;
-\copy FreeDelivery(promotionID, deliveryAmount) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FreeDelivery.csv' DELIMITER ',' CSV HEADER;
-\copy FDSManagers(managerID, managerName) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FDSManagers.csv' DELIMITER ',' CSV HEADER;
-\copy Launches(managerID, promotionID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Launches.csv' DELIMITER ',' CSV HEADER;
-\copy DeliveryFee(deliveryID, deliveryFeeAmount) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/DeliveryFee.csv' DELIMITER ',' CSV HEADER;
-\copy Reviews(reviewID, reviewImg, reviewMsg) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
-\copy Sets(managerID, deliveryID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Sets.csv' DELIMITER ',' CSV HEADER;
-\copy Riders(riderID,riderName,riderEmail,contactNum,isOccupied,isFullTime,baseSalary) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Riders.csv' DELIMITER ',' CSV HEADER;
-\copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
-\copy Applies(orderID, promotionID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
-\copy Contains(quantity, foodItemID, orderID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
-\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
-\copy CreditCards(creditCardNumber) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
-\copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
-\copy Requests(orderID, customerID, paymentID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
-\copy Owns(customerID, creditCardNumber) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Owns.csv'DELIMITER ',' CSV HEADER;
-\copy Addresses(address, addressTimeStamp, customerID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
-\copy SavedAddresses(address) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
-\copy RecentAddresses(address) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
-\copy Rates(customerID, riderID, orderID, rating) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
-\copy FTDayRanges(ftDayRangeID, ftDayRangeDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FTDayRanges.csv' DELIMITER ',' CSV HEADER;
-\copy FTShifts(ftShiftID, ftShiftDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FTShifts.csv' DELIMITER ',' CSV HEADER;
-\copy PTWorkDays(dayOfWeekID, dayOfWeekDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PTWorkDays.csv' DELIMITER ',' CSV HEADER;
-\copy PTWorkingHours(ptWorkingHourID, ptHourDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PTWorkingHours.csv' DELIMITER ',' CSV HEADER;
-\copy MWS(mwsID, riderID, isFullTime, ftDayRangeID, dayOfWeekID, ftShiftID, ptWorkingHourID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/MWS.csv' DELIMITER ',' CSV HEADER;
+\copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
+\copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
+\copy RestaurantStaff(restaurantStaffID, restaurantStaffName, restaurantID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
+\copy Manages(restaurantStaffID, foodItemID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
+\copy Promotions(promotionID, startTimeStamp, endTimeStamp) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
+\copy Offers(restaurantID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Offers.csv' DELIMITER ',' CSV HEADER;
+\copy TargettedPromoCode(promotionID, promotionDetails) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/TargettedPromoCode.csv' DELIMITER ',' CSV HEADER;
+\copy Percentage(promotionID, percentageAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Percentage.csv' DELIMITER ',' CSV HEADER;
+\copy Amount(promotionID, absoluteAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Amount.csv' DELIMITER ',' CSV HEADER;;
+\copy FreeDelivery(promotionID, deliveryAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FreeDelivery.csv' DELIMITER ',' CSV HEADER;
+\copy FDSManagers(managerID, managerName) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FDSManagers.csv' DELIMITER ',' CSV HEADER;
+\copy Launches(managerID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Launches.csv' DELIMITER ',' CSV HEADER;
+\copy DeliveryFee(deliveryID, deliveryFeeAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/DeliveryFee.csv' DELIMITER ',' CSV HEADER;
+\copy Reviews(reviewID, reviewImg, reviewMsg) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
+\copy Sets(managerID, deliveryID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Sets.csv' DELIMITER ',' CSV HEADER;
+\copy Riders(riderID,riderName,riderEmail,contactNum,isOccupied,isFullTime,baseSalary) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Riders.csv' DELIMITER ',' CSV HEADER;
+\copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
+\copy Applies(orderID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
+\copy Contains(quantity, foodItemID, orderID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
+\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
+\copy CreditCards(creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
+\copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
+\copy Requests(orderID, paymentID, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
+\copy Owns(customerID, creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Owns.csv'DELIMITER ',' CSV HEADER;
+\copy Addresses(address, addressTimeStamp, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
+\copy SavedAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
+\copy RecentAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
+\copy Rates(customerID, riderID, orderID, rating) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
+\copy FTDayRanges(ftDayRangeID, ftDayRangeDes) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FTDayRanges.csv' DELIMITER ',' CSV HEADER;
+\copy FTShifts(ftShiftID, ftShiftDes) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FTShifts.csv' DELIMITER ',' CSV HEADER;
+\copy PTWorkDays(dayOfWeekID, dayOfWeekDes) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/PTWorkDays.csv' DELIMITER ',' CSV HEADER;
+\copy PTWorkingHours(ptWorkingHourID, ptHourDes) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/PTWorkingHours.csv' DELIMITER ',' CSV HEADER;
+\copy MWS(mwsID, riderID, isFullTime, ftDayRangeID, dayOfWeekID, ftShiftID, ptWorkingHourID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/MWS.csv' DELIMITER ',' CSV HEADER;
 
 -- Update each `SERIAL` sequence count after .csv insertion 
 select setval('restaurants_restaurantid_seq',(select max(restaurantid) from Restaurants));
@@ -319,3 +413,38 @@ select setval('payments_paymentid_seq',(select max(paymentid) from Payments));
 select setval('requests_orderid_seq',(select max(orderid) from Requests));
 select setval('customers_customerid_seq',(select max(customerid) from Customers));
 select setval('owns_customerid_seq',(select max(customerid) from Owns));
+
+-- Additional Views
+create view TotalCompletedOrders(orderID, orderPlacedTimeStamp, foodItemID, foodItemName, price, quantity, restaurantID) as
+SELECT DISTINCT O.OrderID, O.orderPlacedTimeStamp, F.foodItemID, F.foodItemName, F.price, C.quantity, F.restaurantID 
+FROM (RestaurantStaff R JOIN FoodItems F ON R.restaurantID = F.restaurantID) 
+NATURAL JOIN Contains C 
+NATURAL JOIN Orders O 
+WHERE O.status = true 
+ORDER BY O.orderPlacedTimeStamp DESC;
+
+create view CustPerMonth(month, year, numCustCreated) as
+    (SELECT to_char(to_timestamp(res.month::text,'MM'), 'Mon') as month, year, numCustCreated  
+    FROM (SELECT extract(month from dateCreated) as month,
+                extract(year from dateCreated) as year, 
+                count(*) as numCustCreated
+            FROM Customers C 
+            GROUP BY 1, 2 
+            ORDER BY year, month) as res);
+
+create view OrderCosts(orderid,totalCostOfOrder) as
+       (select orderid, sum(price*quantity) as totalCostOfOrder
+        from contains join fooditems using (fooditemid) 
+        group by orderid 
+        order by orderid);
+
+create view TotalCostPerMonth(month, year, totalOrders, totalOrdersSum) as 
+        (SELECT to_char(to_timestamp(res.month::text, 'MM'), 'Mon') as month, year, totalOrders, totalOrdersSum
+         FROM (SELECT extract(month from O.orderplacedtimestamp::date) as month,
+                      extract(year from O.orderplacedtimestamp::date) as year,
+                      count(*) as totalOrders,
+                      sum(totalCostOfOrder) as totalOrdersSum
+               FROM Orders O join OrderCosts using (orderid) 
+               GROUP BY 1, 2
+               ORDER BY year, month) as res);
+               
