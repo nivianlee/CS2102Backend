@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const customers = require('./api/customer/customers');
 const fdsManagers = require('./api/admin/fdsmanagers');
 const restaurants = require('./api/admin/restaurants');
-const foodItems = require('./api/common/fooditems');
 const orders = require('./api/common/orders');
 const restaurantstaff = require('./api/admin/restaurantstaff');
 const foodItems = require('./api/common/fooditems');
@@ -32,22 +31,22 @@ app.get('/', (request, response) => {
 });
 
 // customer apis
-app.post('/customer/login', customers.verifyUser);
+app.post('/customer/login', customers.verifyUser); // CFE done
 app.get('/customers', customers.getCustomers);
 app.get('/customers/:customerid', customers.getCustomerById);
 app.get('/customers/:customerid/addresses', customers.getAddresses);
-app.get('/customers/:customerid/recentaddresses', customers.getRecentAddresses);
-app.get('/customers/:customerid/savedaddresses', customers.getSavedAddresses);
+app.get('/customers/:customerid/recentaddresses', customers.getRecentAddresses); // CFE done
+app.get('/customers/:customerid/savedaddresses', customers.getSavedAddresses); // CFE done
 app.post('/customers', customers.createCustomer);
 app.put('/customers/:customerid', customers.updateCustomer);
 app.delete('/customers/:customerid', customers.deleteCustomer);
 
 // common: restaurant apis
-app.get('/restaurants', restaurants.getRestaurants);
+app.get('/restaurants', restaurants.getRestaurants); // CFE done
 
 // common: fooditems apis
 app.get('/fooditems', foodItems.getFoodItems);
-app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId);
+app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId); // CFE done
 app.get('/promotions', promotions.getPromotions);
 app.get('/promotions/:promotionid', promotions.getPromotionsByID);
 
