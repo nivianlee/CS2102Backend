@@ -31,6 +31,10 @@ DROP TABLE IF EXISTS FTDayRanges CASCADE;
 DROP TABLE IF EXISTS PTWorkDays CASCADE;
 DROP TABLE IF EXISTS PTWorkingHours CASCADE;
 DROP TABLE IF EXISTS MWS CASCADE;
+DROP TABLE IF EXISTS PartTimeSchedule CASCADE;
+DROP TABLE IF EXISTS FullTimeSchedule CASCADE;
+DROP TABLE IF EXISTS DayRanges CASCADE;
+DROP TABLE IF EXISTS Shifts CASCADE;
 
 CREATE TABLE Promotions (
     promotionID INTEGER PRIMARY KEY,
@@ -267,6 +271,36 @@ CREATE TABLE MWS(
     PRIMARY KEY(mwsID,riderID,ftDayRangeID,dayOfWeekID,ftShiftID,ptWorkingHourID)   
 );
 
+CREATE TABLE DayRanges(
+    rangeID INTEGER PRIMARY KEY,
+    range INTEGER ARRAY NOT NULL UNIQUE
+);
+
+CREATE TABLE Shifts(
+    shiftID INTEGER PRIMARY KEY,
+    shiftOneStart TIME NOT NULL,
+    shiftOneEnd TIME NOT NULL,
+    shiftTwoStart TIME NOT NULL,
+    shiftTwoEnd TIME NOT NULL
+);
+
+CREATE TABLE PartTimeSchedule(
+    riderID INTEGER REFERENCES Riders,
+    startTime TIME NOT NULL,
+    endTime TIME NOT NULL,
+    duration INTEGER NOT NULL,
+    day INTEGER NOT NULL,
+    PRIMARY KEY(riderID, startTime, day)
+);
+
+CREATE TABLE FullTimeSchedule(
+    riderID INTEGER REFERENCES Riders,
+    shiftID INTEGER REFERENCES Shifts,
+    rangeID INTEGER REFERENCES DayRanges,
+    month INTEGER NOT NULL,
+    PRIMARY KEY(riderID, month)
+);
+
 -- Create triggers after defining schema
 CREATE OR REPLACE FUNCTION check_payment_constraint() RETURNS TRIGGER 
 	AS $$ 
@@ -395,6 +429,21 @@ CREATE TRIGGER orders_in_requests_trigger
 \copy PTWorkDays(dayOfWeekID, dayOfWeekDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PTWorkDays.csv' DELIMITER ',' CSV HEADER;
 \copy PTWorkingHours(ptWorkingHourID, ptHourDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PTWorkingHours.csv' DELIMITER ',' CSV HEADER;
 \copy MWS(mwsID, riderID, isFullTime, ftDayRangeID, dayOfWeekID, ftShiftID, ptWorkingHourID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/MWS.csv' DELIMITER ',' CSV HEADER;
+\copy Shifts(shiftID, shiftOneStart, shiftOneEnd, shiftTwoStart, shiftTwoEnd) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Shifts.csv' DELIMITER ',' CSV HEADER;
+\copy PartTimeSchedule(riderID, startTime, endTime, duration, day) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PartTimeSchedule.csv' DELIMITER ',' CSV HEADER;
+
+-- Insert DayRanges values
+INSERT INTO DayRanges VALUES (1,'{1,2,3,4,5}');
+INSERT INTO DayRanges VALUES (2,'{2,3,4,5,6}');
+INSERT INTO DayRanges VALUES (3,'{3,4,5,6,7}');
+INSERT INTO DayRanges VALUES (4,'{4,5,6,7,1}');
+INSERT INTO DayRanges VALUES (5,'{5,6,7,1,2}');
+INSERT INTO DayRanges VALUES (6,'{6,7,1,2,3}');
+INSERT INTO DayRanges VALUES (7,'{7,1,2,3,4}');
+
+-- Needs to be after DayRanges
+\copy FullTimeSchedule(riderID, shiftID, rangeID, month) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FullTimeSchedule.csv' DELIMITER ',' CSV HEADER;
+
 
 -- Update each `SERIAL` sequence count after .csv insertion 
 select setval('restaurants_restaurantid_seq',(select max(restaurantid) from Restaurants));
