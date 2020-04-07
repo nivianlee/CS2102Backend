@@ -364,7 +364,7 @@ BEGIN
 END; 
 $$ language plpgsql;
 
-DROP TRIGGER IF EXISTS payments_in_requests_trigger ON Payments CASCADE;
+DROP TRIGGER IF EXISTS payments_in_requests_trigger ON Requests CASCADE;
 CREATE TRIGGER payments_in_requests_trigger
 	AFTER UPDATE OF paymentid OR INSERT  
 	ON Requests
@@ -388,12 +388,68 @@ BEGIN
 END; 
 $$ language plpgsql;
 
-DROP TRIGGER IF EXISTS orders_in_requests_trigger ON Payments CASCADE;
+DROP TRIGGER IF EXISTS orders_in_requests_trigger ON Requests CASCADE;
 CREATE TRIGGER orders_in_requests_trigger
 	AFTER UPDATE OF orderid OR INSERT  
 	ON Requests
   	FOR EACH STATEMENT 
     EXECUTE FUNCTION check_total_participation_orders_in_requests();
+
+CREATE OR REPLACE FUNCTION check_at_least_five_riders_in_hour_interval() RETURNS TRIGGER
+  AS $$ 
+DECLARE
+  numPartTimeInHour INTEGER;
+  numFullTimeInHour INTEGER;
+  time_hour_string VARCHAR(20);
+BEGIN
+  FOR d IN 1..7 LOOP -- Iterate through each day 
+    FOR hour IN 10..21 LOOP -- Iterate through each hour, exclude 2200 because work hours stop after 2200
+      numPartTimeInHour := 0;
+      numFullTimeInHour := 0;
+      time_hour_string := to_char(hour, '99') || ':00:00'; 
+      
+      -- In PartTimeSchedule, match by day then check if the hour lies in any of the startTime, endTime ranges. 
+      -- Count tuples that meet requirements. 
+      SELECT COUNT(*) INTO numPartTimeInHour 
+      FROM PartTimeSchedule P
+      WHERE d = P.day
+      AND (time_hour_string::time, time_hour_string::time) OVERLAPS (startTime, endTime);
+
+      -- In FullTimeSchedulem match by day in range, check if hour lies in any of the shift ranges -- use overlaps  
+      -- Count tuples that meet requirements.
+      SELECT COUNT(*) INTO numFullTimeInHour
+      FROM FullTimeSchedule F 
+        JOIN Shifts using (shiftID)
+        JOIN DayRanges using (rangeID)
+      WHERE (SELECT d = ANY(range))
+      AND (
+          (time_hour_string::time, time_hour_string::time) OVERLAPS (shiftOneStart, shiftOneEnd)
+          OR 
+          (time_hour_string::time, time_hour_string::time) OVERLAPS (shiftTwoStart, shiftTwoEnd)
+        );
+
+      IF (numFullTimeInHour + numPartTimeInHour) < 5 THEN 
+        RAISE exception 'Day % at Hour % does not have at least 5 riders', d, hour; 
+      END IF;
+    END LOOP; 
+  END LOOP;
+  RETURN NULL;
+END; 
+$$ language plpgsql; 
+
+DROP TRIGGER IF EXISTS full_time_riders_participation_in_hour_interval_trigger ON FullTimeSchedule CASCADE;
+CREATE TRIGGER full_time_riders_participation_in_hour_interval_trigger
+  AFTER UPDATE OF shiftid, rangeid, month OR INSERT
+  ON FullTimeSchedule
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION check_at_least_five_riders_in_hour_interval(); 
+
+DROP TRIGGER IF EXISTS part_time_riders_participation_in_hour_interval_trigger ON PartTimeSchedule CASCADE;
+CREATE TRIGGER part_time_riders_participation_in_hour_interval_trigger
+  AFTER UPDATE OF starttime, endtime, day OR INSERT
+  ON PartTimeSchedule
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION check_at_least_five_riders_in_hour_interval(); 
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
