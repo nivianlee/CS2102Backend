@@ -202,10 +202,9 @@ CREATE TABLE Customers (
 );
 
 CREATE TABLE Requests (
-    orderID SERIAL REFERENCES Orders(orderID),
+    orderID INTEGER UNIQUE NOT NULL REFERENCES Orders(orderID),
     customerID INTEGER REFERENCES Customers(customerID),
-    paymentID INTEGER REFERENCES Payments(paymentID),
-    PRIMARY KEY(orderID, paymentID)
+    paymentID INTEGER UNIQUE NOT NULL REFERENCES Payments(paymentID)
 );
 
 CREATE TABLE Owns (
@@ -406,7 +405,6 @@ select setval('reviews_reviewid_seq',(select max(reviewID) from Reviews));
 select setval('riders_riderid_seq',(select max(riderid) from Riders));
 select setval('orders_orderid_seq',(select max(orderid) from Orders));
 select setval('payments_paymentid_seq',(select max(paymentid) from Payments));
-select setval('requests_orderid_seq',(select max(orderid) from Requests));
 select setval('customers_customerid_seq',(select max(customerid) from Customers));
 select setval('owns_customerid_seq',(select max(customerid) from Owns));
 
