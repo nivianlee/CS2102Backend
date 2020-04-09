@@ -254,7 +254,7 @@ CREATE TABLE PartTimeSchedule(
     endTime TIME NOT NULL,
     duration INTEGER NOT NULL,
     day INTEGER NOT NULL,
-    PRIMARY KEY(riderID, startTime, day)
+    PRIMARY KEY(riderID, startTime, endTime, day)
 );
 
 CREATE TABLE FullTimeSchedule(
@@ -379,7 +379,7 @@ BEGIN
       WHERE d = P.day
       AND (time_hour_string::time, time_hour_string::time) OVERLAPS (startTime, endTime);
 
-      -- In FullTimeSchedulem match by day in range, check if hour lies in any of the shift ranges -- use overlaps  
+      -- In FullTimeSchedule match by day in range, check if hour lies in any of the shift ranges -- use overlaps  
       -- Count tuples that meet requirements.
       SELECT COUNT(*) INTO numFullTimeInHour
       FROM FullTimeSchedule F 
@@ -403,17 +403,209 @@ $$ language plpgsql;
 
 DROP TRIGGER IF EXISTS full_time_riders_participation_in_hour_interval_trigger ON FullTimeSchedule CASCADE;
 CREATE TRIGGER full_time_riders_participation_in_hour_interval_trigger
-  AFTER UPDATE OF shiftid, rangeid, month OR INSERT
+  AFTER UPDATE OF shiftID, rangeID, month OR INSERT
   ON FullTimeSchedule
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_at_least_five_riders_in_hour_interval(); 
 
 DROP TRIGGER IF EXISTS part_time_riders_participation_in_hour_interval_trigger ON PartTimeSchedule CASCADE;
 CREATE TRIGGER part_time_riders_participation_in_hour_interval_trigger
-  AFTER UPDATE OF starttime, endtime, day OR INSERT
+  AFTER UPDATE OF startTime, endTime, day OR INSERT
   ON PartTimeSchedule
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_at_least_five_riders_in_hour_interval(); 
+
+CREATE OR REPLACE FUNCTION check_part_time_riders_constraints_start_and_end_on_hour() RETURNS TRIGGER 
+  AS $$
+DECLARE 
+  numberRiders INTEGER;
+  violatedDay INTEGER;
+  violatedStartTime TIME;
+  violatedEndTime TIME;
+BEGIN
+  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
+  FOR rid in 1..numberRiders LOOP
+    FOR d in 1..7 LOOP
+      /*
+      Checks if each interval starts and ends on the hour.
+      */
+      SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
+      FROM PartTimeSchedule P
+      WHERE P.riderID = rid
+      AND P.day = d 
+      AND (
+           (EXTRACT(MINUTE FROM P.startTime) > 0)
+           OR (EXTRACT(SECOND FROM P.startTime) > 0)
+           OR (EXTRACT(MINUTE FROM P.endTime) > 0)
+           OR (EXTRACT(SECOND FROM P.endTime) > 0)
+      );
+    END LOOP;
+  END LOOP;
+  RETURN NULL;
+END;
+$$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION check_part_time_riders_constraints_between_10_and_48_hours() RETURNS TRIGGER 
+  AS $$
+DECLARE 
+  numberRiders INTEGER;
+  numberHoursInRiderWWS INTEGER;
+BEGIN
+  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
+  FOR rid in 1..numberRiders LOOP
+    /*
+    Checks total number of hours in WWS is at least 10 and at most 48 
+    */
+    SELECT SUM(EXTRACT(HOUR FROM endTime) - EXTRACT(HOUR FROM startTime)) INTO numberHoursInRiderWWS
+    FROM PartTimeSchedule P
+    WHERE P.riderID = rid;
+
+    IF (numberHoursInRiderWWS < 10) THEN 
+      RAISE exception 'Rider % needs to work at least 10 hours in WWS', rid;
+    ELSIF (numberHoursInRiderWWS > 48) THEN 
+      RAISE exception 'Rider % needs to work at most 48 hours in WWS', rid;
+    END IF;  
+  END LOOP;
+  RETURN NULL;
+END;
+$$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION check_part_time_riders_constraints_1_hour_break() RETURNS TRIGGER 
+  AS $$
+DECLARE 
+  numberRiders INTEGER;
+  violatedDay INTEGER;
+  violatedStartTime TIME;
+  violatedEndTime TIME;
+BEGIN
+  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
+  FOR rid in 1..numberRiders LOOP
+    FOR d in 1..7 LOOP
+      /*
+      Checks if at least one hour of break between two consecutive hour intervals.
+      */
+      SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
+      FROM PartTimeSchedule P 
+      WHERE P.riderID = rid
+      AND P.day = d
+      AND EXISTS (SELECT 1
+                  FROM PartTimeSchedule P2
+                  WHERE P2.riderID = P.riderID
+                  AND P2.day = P.day
+                  AND (EXTRACT(HOUR FROM P.startTime) - EXTRACT(HOUR FROM P2.endTime) = 0) -- Indicates startTime = endTime in two different intervals 
+                  ); 
+      
+      IF (violatedDay IS NOT NULL) THEN 
+        RAISE exception 'Rider % WWS at Day % for interval % - % is not valid. 
+        Must have at least one hour of break between two consecutive hour intervals.', rid, violatedDay, violatedStartTime, violatedEndTime;
+      END IF;
+    END LOOP; 
+  END LOOP;
+  RETURN NULL;
+END;
+$$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION check_part_time_riders_constraints_max_interval_4_hours() RETURNS TRIGGER 
+  AS $$
+DECLARE 
+  numberRiders INTEGER;
+  violatedDay INTEGER;
+  violatedStartTime TIME;
+  violatedEndTime TIME;
+BEGIN
+  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
+  FOR rid in 1..numberRiders LOOP
+    FOR d in 1..7 LOOP
+      /*
+      Checks that each interval does not exceed four hours.
+      */
+      SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
+      FROM PartTimeSchedule P
+      WHERE P.riderID = rid
+      AND P.day = d 
+      AND EXTRACT(HOUR FROM P.endTime) - EXTRACT(HOUR FROM P.startTime) > 4;
+
+      IF (violatedDay IS NOT NULL) THEN 
+        RAISE exception 'Rider % WWS at Day % for interval % - % cannot be exceed four hours.',
+                         rid, violatedDay, violatedStartTime, violatedEndTime;
+      END IF;
+    END LOOP; 
+  END LOOP;
+  RETURN NULL;
+END;
+$$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION check_part_time_riders_constraints_valid_intervals() RETURNS TRIGGER 
+  AS $$
+DECLARE 
+  numberRiders INTEGER;
+  violatedDay INTEGER;
+  violatedStartTime TIME;
+  violatedEndTime TIME;
+BEGIN
+  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
+  FOR rid in 1..numberRiders LOOP
+    FOR d in 1..7 LOOP
+      /*
+      Checks that no intervals overlap in a rider's WWS or exist between 1000-2200. 
+      */
+      SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
+      FROM PartTimeSchedule P 
+      WHERE P.riderID = rid
+      AND P.day = d
+      AND EXISTS (SELECT 1
+                  FROM PartTimeSchedule P2
+                  WHERE P2.riderID = P.riderID
+                  AND P2.day = P.day
+                  AND ((P.startTime, P.endTime) <> (P2.startTime, P2.endTime)) -- differentiate common intervals 
+                  AND ((P.startTime, P.endTime) OVERLAPS (P2.startTime, P2.endTime)) 
+                  )
+      OR (NOT (P.startTime, P.endTime) OVERLAPS ('10:00:00'::TIME, '22:00:00'::TIME));
+
+      IF (violatedDay IS NOT NULL) THEN 
+        RAISE exception 'Rider % WWS at Day % for interval % - % cannot overlap with another existing interval in the WWS and must exist between 1000-2200',
+                         rid, violatedDay, violatedStartTime, violatedEndTime;
+      END IF;
+    END LOOP; 
+  END LOOP;
+  RETURN NULL;
+END;
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS part_time_riders_schedule_start_and_end_on_hour_trigger ON PartTimeSchedule CASCADE;
+CREATE TRIGGER part_time_riders_schedule_start_and_end_on_hour_trigger
+  AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
+  ON PartTimeSchedule
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION check_part_time_riders_constraints_start_and_end_on_hour();
+
+DROP TRIGGER IF EXISTS part_time_riders_schedule_between_10_and_48_hours_trigger ON PartTimeSchedule CASCADE;
+CREATE TRIGGER part_time_riders_schedule_between_10_and_48_hours_trigger
+  AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
+  ON PartTimeSchedule
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION check_part_time_riders_constraints_between_10_and_48_hours();
+
+DROP TRIGGER IF EXISTS part_time_riders_schedule_1_hour_break ON PartTimeSchedule CASCADE;
+CREATE TRIGGER part_time_riders_schedule_1_hour_break
+  AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
+  ON PartTimeSchedule
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION check_part_time_riders_constraints_1_hour_break();
+
+DROP TRIGGER IF EXISTS part_time_riders_schedule_max_interval_4_hours_trigger ON PartTimeSchedule CASCADE;
+CREATE TRIGGER part_time_riders_schedule_max_interval_4_hours_trigger
+  AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
+  ON PartTimeSchedule
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION check_part_time_riders_constraints_max_interval_4_hours();
+
+DROP TRIGGER IF EXISTS part_time_riders_schedule_valid_intervals_trigger ON PartTimeSchedule CASCADE;
+CREATE TRIGGER part_time_riders_schedule_valid_intervals_trigger
+  AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
+  ON PartTimeSchedule
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION check_part_time_riders_constraints_valid_intervals();
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
@@ -444,11 +636,6 @@ CREATE TRIGGER part_time_riders_participation_in_hour_interval_trigger
 \copy SavedAddresses(address) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
 \copy RecentAddresses(address) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
 \copy Rates(customerID, riderID, orderID, rating) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
-\copy FTDayRanges(ftDayRangeID, ftDayRangeDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FTDayRanges.csv' DELIMITER ',' CSV HEADER;
-\copy FTShifts(ftShiftID, ftShiftDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FTShifts.csv' DELIMITER ',' CSV HEADER;
-\copy PTWorkDays(dayOfWeekID, dayOfWeekDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PTWorkDays.csv' DELIMITER ',' CSV HEADER;
-\copy PTWorkingHours(ptWorkingHourID, ptHourDes) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PTWorkingHours.csv' DELIMITER ',' CSV HEADER;
-\copy MWS(mwsID, riderID, isFullTime, ftDayRangeID, dayOfWeekID, ftShiftID, ptWorkingHourID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/MWS.csv' DELIMITER ',' CSV HEADER;
 \copy Shifts(shiftID, shiftOneStart, shiftOneEnd, shiftTwoStart, shiftTwoEnd) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Shifts.csv' DELIMITER ',' CSV HEADER;
 \copy PartTimeSchedule(riderID, startTime, endTime, duration, day) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PartTimeSchedule.csv' DELIMITER ',' CSV HEADER;
 
@@ -463,7 +650,6 @@ INSERT INTO DayRanges VALUES (7,'{7,1,2,3,4}');
 
 -- Needs to be after DayRanges
 \copy FullTimeSchedule(riderID, shiftID, rangeID, month) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FullTimeSchedule.csv' DELIMITER ',' CSV HEADER;
-
 
 -- Update each `SERIAL` sequence count after .csv insertion 
 select setval('restaurants_restaurantid_seq',(select max(restaurantid) from Restaurants));
