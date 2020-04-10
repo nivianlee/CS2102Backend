@@ -11,10 +11,14 @@ const port = 3000;
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
+<<<<<<< HEAD
   res.header(
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept"
   );
+=======
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+>>>>>>> b705b05a3b0aba2d3dcfe5029ae4d0ed380503c9
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
   next();
 });
@@ -69,24 +73,15 @@ app.delete("/fdsManagers/:managerid", fdsManagers.deleteFDSManagers);
 // admin: restaurant
 app.get("/restaurants", restaurants.getRestaurants);
 app.get("/restaurants/:restaurantid", restaurants.getRestaurantById);
-app.get(
-  "/restaurants/restaurantName/:restaurantname",
-  restaurants.getRestaurantByName
-);
-app.get(
-  "/restaurants/restaurantLocation/:restaurantlocation",
-  restaurants.getRestaurantByLocation
-);
+app.get("/restaurants/restaurantName/:restaurantname", restaurants.getRestaurantByName);
+app.get("/restaurants/restaurantLocation/:restaurantlocation", restaurants.getRestaurantByLocation);
+app.post("/restaurants", restaurants.createRestaurant);
+app.post("/restaurants/:restaurantid", restaurants.updateRestaurant);
+app.delete("/restaurants/:restaurantid", restaurants.deleteRestaurant);
 
 // admin: restaurantStaff
-app.get(
-  "/restaurantstaff/orders/:restaurantstaffid",
-  restaurantstaff.getAllCompletedOrders
-);
-app.get(
-  "/restaurantstaff/monthlyOrders/:year/:month/:restaurantstaffid",
-  restaurantstaff.getMonthlyCompletedOrders
-);
+app.get("/restaurantstaff/orders/:restaurantstaffid", restaurantstaff.getAllCompletedOrders);
+app.get("/restaurantstaff/monthlyOrders/:year/:month/:restaurantstaffid", restaurantstaff.getMonthlyCompletedOrders);
 app.get(
   "/restaurantstaff/monthlyStatistics/:year/:month/:restaurantstaffid",
   restaurantstaff.getMonthlyCompletedOrdersStatistics
@@ -95,27 +90,12 @@ app.get(
   "/restaurantstaff/monthlyFavourites/:year/:month/:restaurantstaffid",
   restaurantstaff.getMonthlyFavouriteFoodItems
 );
-app.get(
-  "/restaurantstaff/promotionStatistics/:restaurantstaffid",
-  restaurantstaff.getPromotionalCampaignsStatistics
-);
+app.get("/restaurantstaff/promotionStatistics/:restaurantstaffid", restaurantstaff.getPromotionalCampaignsStatistics);
 app.post("/restaurantstaff", restaurantstaff.createRestaurantStaff);
-app.post(
-  "/restaurantstaff/fooditems/:restaurantstaffid",
-  restaurantstaff.createFoodItem
-);
-app.put(
-  "/restaurantstaff/:restauranttaffid",
-  restaurantstaff.updateRestaurantStaff
-);
-app.put(
-  "/restaurantstaff/fooditems/:restaurantstaffid",
-  restaurantstaff.updateFoodItem
-);
-app.delete(
-  "/restaurantstaff/:restaurantstaffid",
-  restaurantstaff.deleteRestaurantStaff
-);
+app.post("/restaurantstaff/fooditems/:restaurantstaffid", restaurantstaff.createFoodItem);
+app.put("/restaurantstaff/:restauranttaffid", restaurantstaff.updateRestaurantStaff);
+app.put("/restaurantstaff/fooditems/:restaurantstaffid", restaurantstaff.updateFoodItem);
+app.delete("/restaurantstaff/:restaurantstaffid", restaurantstaff.deleteRestaurantStaff);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
