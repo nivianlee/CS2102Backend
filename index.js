@@ -34,15 +34,20 @@ app.get("/", (request, response) => {
 
 // customer apis
 app.get("/customers", customers.getCustomers);
-app.get("/customers/:customerid", customers.getCustomerById);
-app.get("/customers/:customerid/addresses", customers.getAddresses);
-app.get("/customers/:customerid/recentaddresses", customers.getRecentAddresses);
-app.get("/customers/:customerid/savedaddresses", customers.getSavedAddresses);
-app.get("/customers/:customerid/currentorders", customers.getCurrentOrders);
-app.get("/customers/:customerid/pastorders", customers.getPastOrders);
+app.get("/customers/customerid/:customerid", customers.getCustomerById);
+app.get("/customers/addresses/:customerid", customers.getAddresses);
+app.get("/customers/recentaddresses/:customerid", customers.getRecentAddresses);
+app.get("/customers/savedaddresses/:customerid", customers.getSavedAddresses);
+app.get("/customers/currentorders/:customerid", customers.getCurrentOrders);
+app.get("/customers/pastorders/:customerid", customers.getPastOrders);
+app.get("/customers/reviews", customers.getAllReviews);
+app.get("/customers/reviews/:fooditemid", customers.getReviewsForFoodItem);
 app.post("/customers", customers.createCustomer);
-app.put("/customers/:customerid", customers.updateCustomer);
-app.delete("/customers/:customerid", customers.deleteCustomer);
+app.post("/customers/reviews", customers.postReview);
+app.put("/customers/customerid/:customerid", customers.updateCustomer);
+app.put("/customers/reviews", customers.updateReview);
+app.delete("/customers/customerid/:customerid", customers.deleteCustomer);
+app.delete("/customers/reviews", customers.deleteReview);
 
 // fooditems apis
 app.get("/fooditems", foodItems.getFoodItems);

@@ -192,6 +192,120 @@ const getPastOrders = (request, response) => {
   });
 };
 
+const getAllReviews = (request, response) => {
+  pool.query("SELECT * FROM Reviews", (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
+const getReviewsForFoodItem = (request, response) => {
+  const fooditemid = parseInt(request.params.fooditemid);
+  pool.query(
+    "SELECT * FROM Reviews WHERE foodItemID = $1",
+    [fooditemid],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).json(results.rows);
+    }
+  );
+};
+
+const postReview = (request, response) => {
+  const data = {
+    reviewimg: request.body.reviewimg,
+    reviewmsg: request.body.reviewmsg,
+    customerid: request.body.customerid,
+    fooditemid: request.body.fooditemid,
+  };
+
+  const values = [
+    data.reviewimg,
+    data.reviewmsg,
+    data.customerid,
+    data.fooditemid,
+  ];
+
+  const query = `
+  INSERT INTO Reviews (reviewImg, reviewMsg , customerID, foodItemID) 
+  VALUES ($1, $2, $3, $4)
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response
+      .status(200)
+      .send({ message: "Review has been added successfully!" });
+  });
+};
+
+const updateReview = (request, response) => {
+  const data = {
+    reviewid: request.body.reviewid,
+    reviewimg: request.body.reviewimg,
+    reviewmsg: request.body.reviewmsg,
+    customerid: request.body.customerid,
+    fooditemid: request.body.fooditemid,
+  };
+
+  const values = [
+    data.reviewid,
+    data.reviewimg,
+    data.reviewmsg,
+    data.customerid,
+    data.fooditemid,
+  ];
+
+  const query = `
+  UPDATE Reviews
+  SET reviewImg = $2, reviewMsg = $3
+  WHERE reviewID = $1 
+  AND customerID = $4
+  AND foodItemID = $5
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response
+      .status(200)
+      .send({ message: "Review has been updated successfully!" });
+  });
+};
+
+const deleteReview = (request, response) => {
+  const data = {
+    reviewid: request.body.reviewid,
+    customerid: request.body.customerid,
+    fooditemid: request.body.fooditemid,
+  };
+
+  const values = [data.reviewid, data.customerid, data.fooditemid];
+
+  const query = `
+  DELETE FROM Reviews 
+  WHERE reviewID = $1
+  AND customerID = $2
+  AND foodItemID = $3
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response
+      .status(200)
+      .send({ message: "Review has been deleted successfully!" });
+  });
+};
+
 module.exports = {
   getCustomers,
   getCustomerById,
@@ -203,4 +317,9 @@ module.exports = {
   getSavedAddresses,
   getCurrentOrders,
   getPastOrders,
+  getAllReviews,
+  getReviewsForFoodItem,
+  postReview,
+  updateReview,
+  deleteReview,
 };
