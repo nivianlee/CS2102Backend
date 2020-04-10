@@ -122,15 +122,6 @@ CREATE TABLE Sets (
     PRIMARY KEY (managerID, deliveryID)
 );
 
--- Combine Reviews and Posts
-CREATE TABLE Reviews(
-    reviewID SERIAL,
-    reviewImg VARCHAR(50), 
-    reviewMsg VARCHAR(256) NOT NULL,
-    -- orderID INTEGER UNIQUE,
-    PRIMARY KEY (reviewID)
-);
-
 -- Combines MonthlySalaries, Riders
 -- MonthlySalary = baseSalary and deliveryFees which are based on criteria
 CREATE TABLE Riders (
@@ -199,6 +190,17 @@ CREATE TABLE Customers (
     customerPostalCode INTEGER NOT NULL,
     rewardPoints INTEGER NOT NULL DEFAULT 0,
     dateCreated DATE NOT NULL
+);
+
+-- Combine Reviews and Posts
+CREATE TABLE Reviews(
+    reviewID SERIAL,
+    reviewImg VARCHAR(50), 
+    reviewMsg VARCHAR(256) NOT NULL,
+    customerID INTEGER NOT NULL REFERENCES Customers,
+    foodItemID INTEGER NOT NULL REFERENCES FoodItems,
+    PRIMARY KEY (reviewID),
+    UNIQUE(customerID, foodItemID)
 );
 
 CREATE TABLE Requests (
@@ -360,6 +362,36 @@ CREATE TRIGGER orders_in_requests_trigger
   	FOR EACH STATEMENT 
     EXECUTE FUNCTION check_total_participation_orders_in_requests();
 
+-- Ensures that a customer can only review a food item he ordered
+CREATE OR REPLACE FUNCTION check_if_customer_ordered_fooditem() RETURNS TRIGGER
+    AS $$
+DECLARE
+    foodItemIDBeingReviewed INTEGER;
+BEGIN
+    SELECT F.foodItemID INTO foodItemIDBeingReviewed
+        FROM Customers C 
+        NATURAL JOIN Requests R
+        NATURAL JOIN Orders O
+        NATURAL JOIN Contains C2
+        NATURAL JOIN FoodItems F
+        WHERE F.foodItemID = NEW.foodItemID
+        AND C.customerID = NEW.customerID
+        AND O.status = true;
+
+    IF foodItemIDBeingReviewed IS NULL THEN
+        RAISE EXCEPTION 'CustomerID % did not order this food item % ', NEW.customerID, NEW.foodItemID;
+    END IF;
+    RETURN NEW;
+    RETURN NULL;
+END;
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS review_trigger ON Reviews CASCADE;
+CREATE TRIGGER review_trigger
+    BEFORE INSERT ON Reviews
+    FOR EACH ROW
+    EXECUTE FUNCTION check_if_customer_ordered_fooditem();
+
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
@@ -374,7 +406,6 @@ CREATE TRIGGER orders_in_requests_trigger
 \copy FDSManagers(managerID, managerName) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FDSManagers.csv' DELIMITER ',' CSV HEADER;
 \copy Launches(managerID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Launches.csv' DELIMITER ',' CSV HEADER;
 \copy DeliveryFee(deliveryID, deliveryFeeAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/DeliveryFee.csv' DELIMITER ',' CSV HEADER;
-\copy Reviews(reviewID, reviewImg, reviewMsg) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
 \copy Sets(managerID, deliveryID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Sets.csv' DELIMITER ',' CSV HEADER;
 \copy Riders(riderID,riderName,riderEmail,contactNum,isOccupied,isFullTime,baseSalary) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Riders.csv' DELIMITER ',' CSV HEADER;
 \copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
@@ -384,6 +415,7 @@ CREATE TRIGGER orders_in_requests_trigger
 \copy CreditCards(creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
 \copy Requests(orderID, paymentID, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
+\copy Reviews(reviewID, reviewImg, reviewMsg, customerID, foodItemID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
 \copy Owns(customerID, creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Owns.csv'DELIMITER ',' CSV HEADER;
 \copy Addresses(address, addressTimeStamp, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
 \copy SavedAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
