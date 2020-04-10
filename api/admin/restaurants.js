@@ -1,7 +1,7 @@
-const pool = require('../../pool.js');
+const pool = require("../../pool.js");
 
 const getRestaurants = (request, response) => {
-  pool.query('SELECT * FROM Restaurants ORDER BY restaurantName ASC', (error, results) => {
+  pool.query("SELECT * FROM Restaurants ORDER BY restaurantName ASC", (error, results) => {
     if (error) {
       throw error;
     }
@@ -10,9 +10,9 @@ const getRestaurants = (request, response) => {
 };
 
 const getRestaurantById = (request, response) => {
-  const restaurantID = parseInt(request.params.restaurantID);
+  const restaurantid = parseInt(request.params.restaurantid);
 
-  pool.query('SELECT * FROM Restaurants WHERE restaurantID = $1', [restaurantID], (error, results) => {
+  pool.query("SELECT * FROM Restaurants WHERE restaurantID = $1", [restaurantid], (error, results) => {
     if (error) {
       throw error;
     }
@@ -20,44 +20,98 @@ const getRestaurantById = (request, response) => {
   });
 };
 
-const createUser = (request, response) => {
-  const { name, email } = request.body;
+const getRestaurantByName = (request, response) => {
+  const restaurantname = request.params.restaurantname;
 
-  pool.query('INSERT INTO users (name, email) VALUES ($1, $2)', [name, email], (error, results) => {
+  pool.query("SELECT * FROM Restaurants WHERE restaurantName = $1", [restaurantname], (error, results) => {
     if (error) {
       throw error;
     }
-    response.status(201).send(`User added with ID: ${result.insertId}`);
+    response.status(200).json(results.rows);
   });
 };
 
-const updateUser = (request, response) => {
-  const id = parseInt(request.params.id);
-  const { name, email } = request.body;
+// Restaurant Location can either be an address or a postal code.
+const getRestaurantByLocation = (request, response) => {
+  const restaurantlocation = request.params.restaurantlocation;
 
-  pool.query('UPDATE users SET name = $1, email = $2 WHERE id = $3', [name, email, id], (error, results) => {
-    if (error) {
-      throw error;
-    }
-    response.status(200).send(`User modified with ID: ${id}`);
-  });
+  if (isNaN(restaurantlocation)) {
+    pool.query("SELECT * FROM Restaurants WHERE address = $1", [restaurantlocation], (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).json(results.rows);
+    });
+  } else if (!isNaN(restaurantlocation)) {
+    pool.query("SELECT * FROM Restaurants WHERE postalCode = $1", [restaurantlocation], (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).json(results.rows);
+    });
+  } else {
+    throw error;
+  }
 };
 
-const deleteUser = (request, response) => {
-  const id = parseInt(request.params.id);
+const createRestaurant = (request, response) => {
+  const data = {
+    restaurantName: request.body.restaurantName,
+    minOrderCost: request.body.minOrderCost,
+    address: request.body.address,
+    postalCode: request.body.postalCode,
+  };
+  const values = [data.restaurantName, data.minOrderCost, data.address, data.postalCode];
+  pool.query(
+    "INSERT INTO Restaurants (restaurantName, minOrderCost, address, postalCode) VALUES ($1, $2, $3, $4) RETURNING *",
+    values,
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(201).send(`Restaurant added with restaurant name: ${results.rows[0].restaurantname}`);
+    }
+  );
+};
 
-  pool.query('DELETE FROM users WHERE id = $1', [id], (error, results) => {
+const updateRestaurant = (request, response) => {
+  const data = {
+    restaurantName: request.body.restaurantName,
+    minOrderCost: request.body.minOrderCost,
+    address: request.body.address,
+    postalCode: request.body.postalCode,
+    restaurantID: parseInt(request.params.restaurantid),
+  };
+  const values = [data.restaurantName, data.minOrderCost, data.address, data.postalCode, data.restaurantID];
+  pool.query(
+    "UPDATE Restaurants SET restaurantName = $1, minOrderCost = $2, address = $3, postalCode = $4 WHERE restaurantID = $5",
+    values,
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(201).send(`Restaurant is updated `);
+    }
+  );
+};
+
+const deleteRestaurant = (request, response) => {
+  const restaurantID = parseInt(request.params.restaurantid);
+
+  pool.query("DELETE FROM Restaurants WHERE restaurantID = $1 RETURNING *", [restaurantID], (error, results) => {
     if (error) {
       throw error;
     }
-    response.status(200).send(`User deleted with ID: ${id}`);
+    response.status(201).send(`Restaurant with restaurant id ${restaurantID} has been deleted`);
   });
 };
 
 module.exports = {
   getRestaurants,
   getRestaurantById,
-  createUser,
-  updateUser,
-  deleteUser
+  getRestaurantByName,
+  getRestaurantByLocation,
+  createRestaurant,
+  updateRestaurant,
+  deleteRestaurant,
 };

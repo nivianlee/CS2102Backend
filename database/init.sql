@@ -33,8 +33,8 @@ DROP TABLE IF EXISTS Shifts CASCADE;
 
 CREATE TABLE Promotions (
     promotionID INTEGER PRIMARY KEY,
-    startDate DATE, 
-    endDate DATE
+    startTimeStamp TIMESTAMP, 
+    endTimeStamp TIMESTAMP
 );
 
 CREATE TABLE TargettedPromoCode (
@@ -70,7 +70,7 @@ CREATE TABLE FoodItems (
     foodItemID SERIAL PRIMARY KEY, -- enforces exactly 1
     foodItemName VARCHAR(50), 
     price NUMERIC(6, 2),
-    availabilityStatus BOOLEAN,
+    availabilityStatus BOOLEAN DEFAULT true,
     image VARCHAR(50),
     maxNumOfOrders INTEGER,
     category VARCHAR(50),
@@ -666,14 +666,22 @@ select setval('customers_customerid_seq',(select max(customerid) from Customers)
 select setval('owns_customerid_seq',(select max(customerid) from Owns));
 
 -- Additional Views
+create view TotalCompletedOrders(orderID, orderPlacedTimeStamp, foodItemID, foodItemName, price, quantity, restaurantID) as
+SELECT DISTINCT O.OrderID, O.orderPlacedTimeStamp, F.foodItemID, F.foodItemName, F.price, C.quantity, F.restaurantID 
+FROM (RestaurantStaff R JOIN FoodItems F ON R.restaurantID = F.restaurantID) 
+NATURAL JOIN Contains C 
+NATURAL JOIN Orders O 
+WHERE O.status = true 
+ORDER BY O.orderPlacedTimeStamp DESC;
+
 create view CustPerMonth(month, year, numCustCreated) as
-      (SELECT to_char(to_timestamp(res.month::text,'MM'), 'Mon') as month, year, numCustCreated  
-       FROM (SELECT extract(month from dateCreated) as month,
-                    extract(year from dateCreated) as year, 
-                    count(*) as numCustCreated
-             FROM Customers C 
-             GROUP BY 1, 2 
-             ORDER BY year, month) as res);
+    (SELECT to_char(to_timestamp(res.month::text,'MM'), 'Mon') as month, year, numCustCreated  
+    FROM (SELECT extract(month from dateCreated) as month,
+                extract(year from dateCreated) as year, 
+                count(*) as numCustCreated
+            FROM Customers C 
+            GROUP BY 1, 2 
+            ORDER BY year, month) as res);
 
 create view OrderCosts(orderid,totalCostOfOrder) as
        (select orderid, sum(price*quantity) as totalCostOfOrder
