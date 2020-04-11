@@ -423,6 +423,13 @@ NATURAL JOIN Orders O
 WHERE O.status = true 
 ORDER BY O.orderPlacedTimeStamp DESC;
 
+-- Displays information about the daily number of orders made for every food item.
+create view TotalFoodItemsOrderedPerDay(foodItemID, dateOfOrder, numOrdered, availabilityStatus, maxNumOfOrders) as
+SELECT DISTINCT F.foodItemID, DATE(O.orderPlacedTimeStamp), sum(quantity) as numOrdered, F.availabilityStatus, F.maxNumOfOrders
+FROM FoodItems F left join (Contains C natural join Orders O) using (foodItemID)
+GROUP BY (F.foodItemID, DATE(O.orderPlacedTimeStamp)) 
+ORDER BY F.foodItemID, DATE(O.orderPlacedTimeStamp);
+
 create view CustPerMonth(month, year, numCustCreated) as
     (SELECT to_char(to_timestamp(res.month::text,'MM'), 'Mon') as month, year, numCustCreated  
     FROM (SELECT extract(month from dateCreated) as month,
@@ -447,4 +454,67 @@ create view TotalCostPerMonth(month, year, totalOrders, totalOrdersSum) as
                FROM Orders O join OrderCosts using (orderid) 
                GROUP BY 1, 2
                ORDER BY year, month) as res);
-               
+
+/* Additional triggers that can only be created after mock data is inserted */
+
+-- Sets food availability to false if max number is met and no exception raised.
+-- Assumes that insertion of new rows in Orders and Contains are done atomically.
+CREATE OR REPLACE FUNCTION check_food_availability() RETURNS TRIGGER 
+    AS $$
+DECLARE
+    selectedFoodItemID  INTEGER;
+BEGIN
+    SELECT T.foodItemID INTO selectedFoodItemID
+    FROM TotalFoodItemsOrderedPerDay T
+    WHERE T.numOrdered > T.maxNumOfOrders
+    OR T.availabilityStatus = false;
+
+    IF selectedFoodItemID IS NOT NULL THEN
+        RAISE EXCEPTION 'Food item ordered is either unavailable or amount ordered is not allowed';
+    ELSE
+        update FoodItems
+        set availabilityStatus = false
+        where foodItemID = (
+            SELECT T.foodItemID
+            FROM TotalFoodItemsOrderedPerDay T
+            WHERE T.foodItemID = foodItemID
+            AND T.dateOfOrder >= ALL (
+                SELECT T2.dateOfOrder
+                FROM TotalFoodItemsOrderedPerDay T2
+                WHERE T.foodItemID = T2.foodItemID
+            )
+            AND T.numOrdered = T.maxNumOfOrders
+        );
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS after_new_contains_trigger ON Contains CASCADE;
+CREATE TRIGGER after_new_contains_trigger 
+    AFTER INSERT ON Contains
+    FOR EACH ROW EXECUTE FUNCTION check_food_availability();
+
+-- Resets food availability before the first order of the day.
+CREATE OR REPLACE FUNCTION reset_food_availability() RETURNS TRIGGER
+    AS $$
+DECLARE
+    mostRecentTimeStamp TIMESTAMP;
+BEGIN
+    SELECT O.orderPlacedTimeStamp INTO mostRecentTimeStamp
+    FROM Orders O
+    WHERE O.orderID + 1 = NEW.orderID
+    AND DATE(O.orderPlacedTimeStamp) = DATE(NEW.orderPlacedTimeStamp);
+
+    IF mostRecentTimeStamp IS NULL THEN
+        update FoodItems
+        set availabilityStatus = true;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS after_new_orders_trigger ON Orders CASCADE;
+CREATE TRIGGER after_new_orders_trigger 
+    AFTER INSERT ON Orders
+    FOR EACH ROW EXECUTE FUNCTION reset_food_availability();

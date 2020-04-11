@@ -10,7 +10,7 @@ const promotions = require('./api/common/promotions');
 const app = express();
 const port = 3000;
 
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
@@ -20,13 +20,13 @@ app.use(function(req, res, next) {
 app.use(bodyParser.json());
 app.use(
   bodyParser.urlencoded({
-    extended: true
+    extended: true,
   })
 );
 
 app.get('/', (request, response) => {
   response.json({
-    info: 'Node.js, Express, and Postgres API'
+    info: 'Node.js, Express, and Postgres API',
   });
 });
 
@@ -69,6 +69,9 @@ app.get('/restaurants', restaurants.getRestaurants);
 app.get('/restaurants/:restaurantid', restaurants.getRestaurantById);
 app.get('/restaurants/restaurantName/:restaurantname', restaurants.getRestaurantByName);
 app.get('/restaurants/restaurantLocation/:restaurantlocation', restaurants.getRestaurantByLocation);
+app.post('/restaurants', restaurants.createRestaurant);
+app.post('/restaurants/:restaurantid', restaurants.updateRestaurant);
+app.delete('/restaurants/:restaurantid', restaurants.deleteRestaurant);
 
 // admin: restaurantStaff
 app.get('/restaurantstaff/orders/:restaurantstaffid', restaurantstaff.getAllCompletedOrders);
