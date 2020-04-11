@@ -249,7 +249,7 @@ CREATE TABLE Shifts(
 );
 
 CREATE TABLE PartTimeSchedules(
-    riderID INTEGER REFERENCES Riders,
+    riderID INTEGER REFERENCES Riders ON DELETE CASCADE,
     startTime TIME NOT NULL,
     endTime TIME NOT NULL,
     duration INTEGER NOT NULL,
@@ -258,7 +258,7 @@ CREATE TABLE PartTimeSchedules(
 );
 
 CREATE TABLE FullTimeSchedules(
-    riderID INTEGER REFERENCES Riders,
+    riderID INTEGER REFERENCES Riders ON DELETE CASCADE,
     shiftID INTEGER REFERENCES Shifts,
     rangeID INTEGER REFERENCES DayRanges,
     month INTEGER NOT NULL,
@@ -403,14 +403,14 @@ $$ language plpgsql;
 
 DROP TRIGGER IF EXISTS full_time_riders_participation_in_hour_interval_trigger ON FullTimeSchedules CASCADE;
 CREATE TRIGGER full_time_riders_participation_in_hour_interval_trigger
-  AFTER UPDATE OF shiftID, rangeID, month OR INSERT
+  AFTER UPDATE OF shiftID, rangeID, month OR INSERT OR DELETE 
   ON FullTimeSchedules
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_at_least_five_riders_in_hour_interval(); 
 
 DROP TRIGGER IF EXISTS part_time_riders_participation_in_hour_interval_trigger ON PartTimeSchedules CASCADE;
 CREATE TRIGGER part_time_riders_participation_in_hour_interval_trigger
-  AFTER UPDATE OF startTime, endTime, day OR INSERT
+  AFTER UPDATE OF startTime, endTime, day OR INSERT OR DELETE 
   ON PartTimeSchedules
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_at_least_five_riders_in_hour_interval(); 
@@ -581,14 +581,14 @@ CREATE TRIGGER part_time_riders_schedule_start_and_end_on_hour_trigger
 
 DROP TRIGGER IF EXISTS part_time_riders_schedule_between_10_and_48_hours_trigger ON PartTimeSchedules CASCADE;
 CREATE TRIGGER part_time_riders_schedule_between_10_and_48_hours_trigger
-  AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
+  AFTER UPDATE OF riderID, startTime, endTime OR INSERT OR DELETE 
   ON PartTimeSchedules
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_part_time_riders_constraints_between_10_and_48_hours();
 
 DROP TRIGGER IF EXISTS part_time_riders_schedule_1_hour_break ON PartTimeSchedules CASCADE;
 CREATE TRIGGER part_time_riders_schedule_1_hour_break
-  AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
+  AFTER UPDATE OF riderID, startTime, endTime OR INSERT  
   ON PartTimeSchedules
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_part_time_riders_constraints_1_hour_break();
@@ -602,7 +602,7 @@ CREATE TRIGGER part_time_riders_schedule_max_interval_4_hours_trigger
 
 DROP TRIGGER IF EXISTS part_time_riders_schedule_valid_intervals_trigger ON PartTimeSchedules CASCADE;
 CREATE TRIGGER part_time_riders_schedule_valid_intervals_trigger
-  AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
+  AFTER UPDATE OF riderID, startTime, endTime OR INSERT  
   ON PartTimeSchedules
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_part_time_riders_constraints_valid_intervals();
@@ -612,7 +612,7 @@ CREATE TRIGGER part_time_riders_schedule_valid_intervals_trigger
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
 \copy RestaurantStaff(restaurantStaffID, restaurantStaffName, restaurantID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
 \copy Manages(restaurantStaffID, foodItemID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
-\copy Promotions(promotionID, startDate, endDate) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
+\copy Promotions(promotionID, startTimeStamp, endTimeStamp) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
 \copy Offers(restaurantID, promotionID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Offers.csv' DELIMITER ',' CSV HEADER;
 \copy TargettedPromoCode(promotionID, promotionDetails) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/TargettedPromoCode.csv' DELIMITER ',' CSV HEADER;
 \copy Percentage(promotionID, percentageAmount) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Percentage.csv' DELIMITER ',' CSV HEADER;
