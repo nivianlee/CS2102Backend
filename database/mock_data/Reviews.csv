@@ -1,11 +1,11 @@
-reviewID,reviewImg,reviewMsg
-1,HpfnDXmHdkSLifOskbEtXg==,consequat nulla nisl nunc nisl duis bibendum felis sed interdum venenatis turpis enim blandit mi
-2,+WsM4rv121+VkBGYwTSsjg==,quam sapien varius ut blandit non interdum in ante vestibulum ante ipsum primis in
-3,vMkCGuXKUPdpJsV3mHOzoQ==,interdum eu tincidunt in leo maecenas pulvinar lobortis est phasellus sit
-4,6pabtAoe4DyMCtlIpmS1jg==,sed magna at nunc commodo placerat praesent blandit nam nulla integer pede justo lacinia eget
-5,yA/sex+Lmkbb5Jo8/wXuMw==,viverra dapibus nulla suscipit ligula in lacus curabitur at ipsum ac tellus semper interdum mauris ullamcorper
-6,7bWngj7M6ZIZ9eo8xeXNNw==,in ante vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae duis faucibus accumsan odio curabitur
-7,TT0m13y0aT8+5ZUA0dIRwg==,hac habitasse platea dictumst maecenas ut massa quis augue luctus
-8,NNwmjt0slJH9GRSRAS7dZg==,suscipit ligula in lacus curabitur at ipsum ac tellus semper interdum mauris ullamcorper purus sit amet nulla quisque arcu
-9,uSJT7rbhxOcMLoFgL4GadA==,ac lobortis vel dapibus at diam nam tristique tortor eu
-10,vXcrBDw/Wu+Uv20uOB/KOA==,suspendisse potenti nullam porttitor lacus at turpis donec posuere metus vitae ipsum
+reviewID,reviewImg,reviewMsg,customerID,foodItemID
+1,HpfnDXmHdkSLifOskbEtXg==,consequat nulla nisl nunc nisl duis bibendum felis sed interdum venenatis turpis enim blandit mi,1,5
+2,+WsM4rv121+VkBGYwTSsjg==,quam sapien varius ut blandit non interdum in ante vestibulum ante ipsum primis in,2,8
+3,vMkCGuXKUPdpJsV3mHOzoQ==,interdum eu tincidunt in leo maecenas pulvinar lobortis est phasellus sit,3,4
+4,6pabtAoe4DyMCtlIpmS1jg==,sed magna at nunc commodo placerat praesent blandit nam nulla integer pede justo lacinia eget,4,13
+5,yA/sex+Lmkbb5Jo8/wXuMw==,viverra dapibus nulla suscipit ligula in lacus curabitur at ipsum ac tellus semper interdum mauris ullamcorper,5,16
+6,7bWngj7M6ZIZ9eo8xeXNNw==,in ante vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae duis faucibus accumsan odio curabitur,7,15
+7,TT0m13y0aT8+5ZUA0dIRwg==,hac habitasse platea dictumst maecenas ut massa quis augue luctus,8,7
+8,NNwmjt0slJH9GRSRAS7dZg==,suscipit ligula in lacus curabitur at ipsum ac tellus semper interdum mauris ullamcorper purus sit amet nulla quisque arcu,10,6
+9,uSJT7rbhxOcMLoFgL4GadA==,ac lobortis vel dapibus at diam nam tristique tortor eu,13,3
+10,vXcrBDw/Wu+Uv20uOB/KOA==,suspendisse potenti nullam porttitor lacus at turpis donec posuere metus vitae ipsum,14,4
