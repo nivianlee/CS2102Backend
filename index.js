@@ -35,11 +35,19 @@ app.post('/customer/login', customers.verifyUser); // CFE done
 app.get('/customers', customers.getCustomers);
 app.get('/customers/:customerid', customers.getCustomerById);
 app.get('/customers/:customerid/addresses', customers.getAddresses);
-app.get('/customers/:customerid/recentaddresses', customers.getRecentAddresses); // CFE done
-app.get('/customers/:customerid/savedaddresses', customers.getSavedAddresses); // CFE done
+// app.get('/customers/:customerid/recentaddresses', customers.getRecentAddresses);
+// app.get('/customers/:customerid/savedaddresses', customers.getSavedAddresses);
+app.post('/customers/:customerid/address', customers.postAddress);
+app.get('/customers/currentorders/:customerid', customers.getCurrentOrders);
+app.get('/customers/pastorders/:customerid', customers.getPastOrders);
+app.get('/customers/reviews', customers.getAllReviews);
+app.get('/customers/reviews/:fooditemid', customers.getReviewsForFoodItem);
 app.post('/customers', customers.createCustomer);
-app.put('/customers/:customerid', customers.updateCustomer);
-app.delete('/customers/:customerid', customers.deleteCustomer);
+app.post('/customers/reviews', customers.postReview);
+app.put('/customers/customerid/:customerid', customers.updateCustomer);
+app.put('/customers/reviews', customers.updateReview);
+app.delete('/customers/customerid/:customerid', customers.deleteCustomer);
+app.delete('/customers/reviews', customers.deleteReview);
 
 // common: restaurant apis
 app.get('/restaurants', restaurants.getRestaurants); // CFE done
