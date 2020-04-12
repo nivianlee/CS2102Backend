@@ -216,25 +216,26 @@ CREATE TABLE Owns (
 
 -- combine Stores and Addresses
 CREATE TABLE Addresses (
-    address VARCHAR(100) PRIMARY KEY,
+    addressID SERIAL PRIMARY KEY,
+    address VARCHAR(100),
     addressTimeStamp TIMESTAMP NOT NULL,
     postalCode INTEGER NOT NULL,
     customerID INTEGER NOT NULL REFERENCES Customers
 );
 
-CREATE TABLE SavedAddresses (
-    -- might have some issue here without a link to the customerID
-    -- does multiple customerID having the same address cause an issue? if not, then should be fine
-    address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
-    -- postalCode INTEGER NOT NULL
-);
+-- CREATE TABLE SavedAddresses (
+--     -- might have some issue here without a link to the customerID
+--     -- does multiple customerID having the same address cause an issue? if not, then should be fine
+--     address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
+--     -- postalCode INTEGER NOT NULL
+-- );
 
-CREATE TABLE RecentAddresses (
-    -- might have some issue here without a link to the customerID
-    -- does multiple customerID having the same address cause an issue? if not, then should be fine
-    address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
-    -- postalCode INTEGER NOT NULL
-);
+-- CREATE TABLE RecentAddresses (
+--     -- might have some issue here without a link to the customerID
+--     -- does multiple customerID having the same address cause an issue? if not, then should be fine
+--     address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
+--     -- postalCode INTEGER NOT NULL
+-- );
 
 CREATE TABLE Rates (
     customerID INTEGER REFERENCES Customers,
@@ -393,9 +394,9 @@ CREATE TRIGGER orders_in_requests_trigger
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
 \copy Requests(orderID, customerID, paymentID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
 \copy Owns(customerID, creditCardNumber) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Owns.csv' DELIMITER ',' CSV HEADER;
-\copy Addresses(address, addressTimeStamp, postalCode, customerID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Addresses_test.csv' DELIMITER ',' CSV HEADER;
-\copy SavedAddresses(address) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
-\copy RecentAddresses(address) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
+\copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Addresses_test.csv' DELIMITER ',' CSV HEADER;
+-- \copy SavedAddresses(address) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
+-- \copy RecentAddresses(address) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
 \copy Rates(customerID, riderID, orderID, rating) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
 \copy FTDayRanges(ftDayRangeID, ftDayRangeDes) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FTDayRanges.csv' DELIMITER ',' CSV HEADER;
 \copy FTShifts(ftShiftID, ftShiftDes) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FTShifts.csv' DELIMITER ',' CSV HEADER;
@@ -416,7 +417,7 @@ select setval('customers_customerid_seq',(select max(customerid) from Customers)
 select setval('payments_paymentid_seq',(select max(paymentid) from Payments));
 select setval('requests_orderid_seq',(select max(orderid) from Requests));
 select setval('owns_customerid_seq',(select max(customerid) from Owns));
-
+select setval('addresses_addressid_seq',(select max(addressid) from Addresses));
 -- Additional Views
 create view TotalCompletedOrders(orderID, orderPlacedTimeStamp, foodItemID, foodItemName, price, quantity, restaurantID) as
 SELECT DISTINCT O.OrderID, O.orderPlacedTimeStamp, F.foodItemID, F.foodItemName, F.price, C.quantity, F.restaurantID 
