@@ -30,7 +30,7 @@ const createCustomer = (request, response) => {
     address: request.body.customerAddress,
     postalCode: request.body.customerPostalCode,
     rewardPoints: 0,
-    dateCreated: new Date()
+    dateCreated: new Date(),
   };
   const values = [
     data.name,
@@ -40,9 +40,9 @@ const createCustomer = (request, response) => {
     data.address,
     data.postalCode,
     data.rewardPoints,
-    data.dateCreated
+    data.dateCreated,
   ];
-  //console.log(values);
+
   pool.query(
     'INSERT INTO Customers (customerName, customerEmail,customerPassword,customerPhone,customerAddress,customerPostalCode,rewardPoints,dateCreated) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
     values,
@@ -66,10 +66,10 @@ const updateCustomer = (request, response) => {
     phone: request.body.customerPhone,
     address: request.body.customerAddress,
     postalCode: request.body.customerPostalCode,
-    customerId: request.params.customerid
+    customerId: request.params.customerid,
   };
   const values = [data.name, data.email, data.password, data.phone, data.address, data.postalCode, data.customerId];
-  console.log(values);
+
   pool.query(
     'UPDATE Customers SET customerName = $1, customerEmail = $2, customerPassword = $3, customerPhone = $4, customerAddress = $5, customerPostalCode = $6 WHERE customerId = $7',
     values,
@@ -211,7 +211,7 @@ const getAddresses = (request, response) => {
   const customerid = parseInt(request.params.customerid);
 
   pool.query(
-    'SELECT distinct address, customerID FROM Addresses WHERE customerId = $1',
+    'SELECT distinct * FROM Addresses WHERE customerId = $1 ORDER BY addressTimeStamp desc limit 5',
     [customerid],
     (error, results) => {
       if (error) {
@@ -222,34 +222,220 @@ const getAddresses = (request, response) => {
   );
 };
 
-const getRecentAddresses = (request, response) => {
-  const customerid = parseInt(request.params.customerid);
+// const getRecentAddresses = (request, response) => {
+//   const customerid = parseInt(request.params.customerid);
+
+//   pool.query(
+//     'SELECT distinct addressID, address, postalCode, customerID FROM Addresses WHERE customerId = $1',
+//     [customerid],
+//     (error, results) => {
+//       if (error) {
+//         throw error;
+//       }
+//       response.status(200).json(results.rows);
+//     }
+//   );
+// };
+
+// const getSavedAddresses = (request, response) => {
+//   const customerid = parseInt(request.params.customerid);
+
+//   pool.query(
+//     'SELECT distinct addressID, address, postalCode, customerID FROM Addresses WHERE customerId = $1',
+//     [customerid],
+//     (error, results) => {
+//       if (error) {
+//         throw error;
+//       }
+//       response.status(200).json(results.rows);
+//     }
+//   );
+// };
+
+const postAddress = (request, response) => {
+  const data = {
+    address: request.body.address,
+    addressTimeStamp: new Date(),
+    postalCode: request.body.postalcode,
+    customerId: request.body.customerid,
+  };
+  const values = [data.address, data.addressTimeStamp, data.postalCode, data.customerId];
 
   pool.query(
-    'SELECT distinct address, customerID FROM Addresses natural join RecentAddresses WHERE customerId = $1',
-    [customerid],
+    'INSERT INTO Addresses (address, addressTimeStamp, postalCode, customerID) VALUES ($1, $2, $3, $4)',
+    values,
     (error, results) => {
       if (error) {
+        response.status(401).send({ message: 'Failed!' });
         throw error;
       }
-      response.status(200).json(results.rows);
+      response.status(201).send({ message: 'Address has been added successfully!' });
     }
   );
 };
 
-const getSavedAddresses = (request, response) => {
-  const customerid = parseInt(request.params.customerid);
+const updateAddress = (request, response) => {
+  const data = {
+    addressid: request.body.addressid,
+    address: request.body.address,
+    addressTimeStamp: new Date(),
+    postalcode: request.body.postalcode,
+  };
 
-  pool.query(
-    'SELECT distinct address, customerID FROM Addresses natural join SavedAddresses WHERE customerId = $1',
-    [customerid],
-    (error, results) => {
-      if (error) {
-        throw error;
-      }
-      response.status(200).json(results.rows);
+  const values = [data.addressid, data.address, data.addressTimeStamp, data.postalcode];
+
+  const query = `
+  UPDATE Addresses
+  SET address = $2, addressTimeStamp = $3, postalCode = $4
+  WHERE addressID = $1 
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
     }
-  );
+    response.status(200).send({ message: 'Address has been updated successfully!' });
+  });
+};
+
+const deleteAddress = (request, response) => {
+  const addressid = parseInt(request.params.addressid);
+
+  const query = 'DELETE FROM Addresses WHERE addressID = $1';
+
+  pool.query(query, [addressid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).send({ message: 'Address has been deleted successfully!' });
+  });
+};
+
+const getCurrentOrders = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+  const query = `
+  SELECT *
+  FROM Requests R natural join Payments P natural join Orders O
+  WHERE customerID = $1
+  AND O.status = false
+`;
+
+  pool.query(query, [customerid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
+const getPastOrders = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+  const query = `
+  SELECT *
+  FROM Requests R natural join Payments P natural join Orders O
+  WHERE customerID = $1
+  AND O.status = true
+`;
+
+  pool.query(query, [customerid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
+const getAllReviews = (request, response) => {
+  pool.query('SELECT * FROM Reviews', (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
+const getReviewsForFoodItem = (request, response) => {
+  const fooditemid = parseInt(request.params.fooditemid);
+  pool.query('SELECT * FROM Reviews WHERE foodItemID = $1', [fooditemid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
+const postReview = (request, response) => {
+  const data = {
+    reviewimg: request.body.reviewimg,
+    reviewmsg: request.body.reviewmsg,
+    customerid: request.body.customerid,
+    fooditemid: request.body.fooditemid,
+  };
+
+  const values = [data.reviewimg, data.reviewmsg, data.customerid, data.fooditemid];
+
+  const query = `
+  INSERT INTO Reviews (reviewImg, reviewMsg , customerID, foodItemID) 
+  VALUES ($1, $2, $3, $4)
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).send({ message: 'Review has been added successfully!' });
+  });
+};
+
+const updateReview = (request, response) => {
+  const data = {
+    reviewid: request.body.reviewid,
+    reviewimg: request.body.reviewimg,
+    reviewmsg: request.body.reviewmsg,
+    customerid: request.body.customerid,
+    fooditemid: request.body.fooditemid,
+  };
+
+  const values = [data.reviewid, data.reviewimg, data.reviewmsg, data.customerid, data.fooditemid];
+
+  const query = `
+  UPDATE Reviews
+  SET reviewImg = $2, reviewMsg = $3
+  WHERE reviewID = $1 
+  AND customerID = $4
+  AND foodItemID = $5
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).send({ message: 'Review has been updated successfully!' });
+  });
+};
+
+const deleteReview = (request, response) => {
+  const data = {
+    reviewid: request.body.reviewid,
+    customerid: request.body.customerid,
+    fooditemid: request.body.fooditemid,
+  };
+
+  const values = [data.reviewid, data.customerid, data.fooditemid];
+
+  const query = `
+  DELETE FROM Reviews 
+  WHERE reviewID = $1
+  AND customerID = $2
+  AND foodItemID = $3
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).send({ message: 'Review has been deleted successfully!' });
+  });
 };
 
 module.exports = {
@@ -260,6 +446,16 @@ module.exports = {
   updateCustomer,
   deleteCustomer,
   getAddresses,
-  getRecentAddresses,
-  getSavedAddresses
+  // getRecentAddresses,
+  // getSavedAddresses,
+  postAddress,
+  updateAddress,
+  deleteAddress,
+  getCurrentOrders,
+  getPastOrders,
+  getAllReviews,
+  getReviewsForFoodItem,
+  postReview,
+  updateReview,
+  deleteReview,
 };
