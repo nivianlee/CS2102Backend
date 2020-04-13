@@ -370,7 +370,7 @@ CREATE TRIGGER orders_in_requests_trigger
     EXECUTE FUNCTION check_total_participation_orders_in_requests();
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
-\copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Restaurants_test.csv' DELIMITER ',' CSV HEADER;
+\copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
 \copy RestaurantStaff(restaurantStaffID, restaurantStaffName, restaurantID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
 \copy Manages(restaurantStaffID, foodItemID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
@@ -389,7 +389,7 @@ CREATE TRIGGER orders_in_requests_trigger
 \copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
 \copy Applies(orderID, promotionID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
 \copy Contains(quantity, foodItemID, orderID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
-\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, rewardPoints, dateCreated) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Customers_test.csv' DELIMITER ',' CSV HEADER;
+\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, rewardPoints, dateCreated) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
 \copy CreditCards(creditCardNumber) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
 \copy Requests(orderID, customerID, paymentID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
