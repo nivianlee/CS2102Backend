@@ -122,15 +122,6 @@ CREATE TABLE Sets (
     PRIMARY KEY (managerID, deliveryID)
 );
 
--- Combine Reviews and Posts
-CREATE TABLE Reviews(
-    reviewID SERIAL,
-    reviewImg VARCHAR(50), 
-    reviewMsg VARCHAR(256) NOT NULL,
-    -- orderID INTEGER UNIQUE,
-    PRIMARY KEY (reviewID)
-);
-
 -- Combines MonthlySalaries, Riders
 -- MonthlySalary = baseSalary and deliveryFees which are based on criteria
 CREATE TABLE Riders (
@@ -201,11 +192,21 @@ CREATE TABLE Customers (
     dateCreated DATE NOT NULL
 );
 
+-- Combine Reviews and Posts
+CREATE TABLE Reviews(
+    reviewID SERIAL,
+    reviewImg VARCHAR(50), 
+    reviewMsg VARCHAR(256) NOT NULL,
+    customerID INTEGER NOT NULL REFERENCES Customers,
+    foodItemID INTEGER NOT NULL REFERENCES FoodItems,
+    PRIMARY KEY (reviewID),
+    UNIQUE(customerID, foodItemID)
+);
+
 CREATE TABLE Requests (
-    orderID SERIAL REFERENCES Orders(orderID),
+    orderID INTEGER UNIQUE NOT NULL REFERENCES Orders(orderID),
     customerID INTEGER REFERENCES Customers(customerID),
-    paymentID INTEGER REFERENCES Payments(paymentID),
-    PRIMARY KEY(orderID, paymentID)
+    paymentID INTEGER UNIQUE NOT NULL REFERENCES Payments(paymentID)
 );
 
 CREATE TABLE Owns (
@@ -369,6 +370,36 @@ CREATE TRIGGER orders_in_requests_trigger
   	FOR EACH STATEMENT 
     EXECUTE FUNCTION check_total_participation_orders_in_requests();
 
+-- Ensures that a customer can only review a food item he ordered
+CREATE OR REPLACE FUNCTION check_if_customer_ordered_fooditem() RETURNS TRIGGER
+    AS $$
+DECLARE
+    foodItemIDBeingReviewed INTEGER;
+BEGIN
+    SELECT F.foodItemID INTO foodItemIDBeingReviewed
+        FROM Customers C 
+        NATURAL JOIN Requests R
+        NATURAL JOIN Orders O
+        NATURAL JOIN Contains C2
+        NATURAL JOIN FoodItems F
+        WHERE F.foodItemID = NEW.foodItemID
+        AND C.customerID = NEW.customerID
+        AND O.status = true;
+
+    IF foodItemIDBeingReviewed IS NULL THEN
+        RAISE EXCEPTION 'CustomerID % did not order this food item % ', NEW.customerID, NEW.foodItemID;
+    END IF;
+    RETURN NEW;
+    RETURN NULL;
+END;
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS review_trigger ON Reviews CASCADE;
+CREATE TRIGGER review_trigger
+    BEFORE INSERT ON Reviews
+    FOR EACH ROW
+    EXECUTE FUNCTION check_if_customer_ordered_fooditem();
+
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
@@ -383,7 +414,6 @@ CREATE TRIGGER orders_in_requests_trigger
 \copy FDSManagers(managerID, managerName) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FDSManagers.csv' DELIMITER ',' CSV HEADER;
 \copy Launches(managerID, promotionID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Launches.csv' DELIMITER ',' CSV HEADER;
 \copy DeliveryFee(deliveryID, deliveryFeeAmount) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/DeliveryFee.csv' DELIMITER ',' CSV HEADER;
-\copy Reviews(reviewID, reviewImg, reviewMsg) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
 \copy Sets(managerID, deliveryID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Sets.csv' DELIMITER ',' CSV HEADER;
 \copy Riders(riderID,riderName,riderEmail,contactNum,isOccupied,isFullTime,baseSalary) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Riders.csv' DELIMITER ',' CSV HEADER;
 \copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
@@ -392,7 +422,8 @@ CREATE TRIGGER orders_in_requests_trigger
 \copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, rewardPoints, dateCreated) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
 \copy CreditCards(creditCardNumber) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
-\copy Requests(orderID, customerID, paymentID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
+\copy Requests(orderID, paymentID, customerID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
+\copy Reviews(reviewID, reviewImg, reviewMsg, customerID, foodItemID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
 \copy Owns(customerID, creditCardNumber) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Owns.csv' DELIMITER ',' CSV HEADER;
 \copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
 -- \copy SavedAddresses(address) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
@@ -413,11 +444,11 @@ select setval('deliveryfee_deliveryid_seq',(select max(deliveryid) from Delivery
 select setval('reviews_reviewid_seq',(select max(reviewID) from Reviews));
 select setval('riders_riderid_seq',(select max(riderid) from Riders));
 select setval('orders_orderid_seq',(select max(orderid) from Orders));
-select setval('customers_customerid_seq',(select max(customerid) from Customers));
 select setval('payments_paymentid_seq',(select max(paymentid) from Payments));
-select setval('requests_orderid_seq',(select max(orderid) from Requests));
+select setval('customers_customerid_seq',(select max(customerid) from Customers));
 select setval('owns_customerid_seq',(select max(customerid) from Owns));
 select setval('addresses_addressid_seq',(select max(addressid) from Addresses));
+
 -- Additional Views
 create view TotalCompletedOrders(orderID, orderPlacedTimeStamp, foodItemID, foodItemName, price, quantity, restaurantID) as
 SELECT DISTINCT O.OrderID, O.orderPlacedTimeStamp, F.foodItemID, F.foodItemName, F.price, C.quantity, F.restaurantID 
@@ -426,6 +457,13 @@ NATURAL JOIN Contains C
 NATURAL JOIN Orders O 
 WHERE O.status = true 
 ORDER BY O.orderPlacedTimeStamp DESC;
+
+-- Displays information about the daily number of orders made for every food item.
+create view TotalFoodItemsOrderedPerDay(foodItemID, dateOfOrder, numOrdered, availabilityStatus, maxNumOfOrders) as
+SELECT DISTINCT F.foodItemID, DATE(O.orderPlacedTimeStamp), sum(quantity) as numOrdered, F.availabilityStatus, F.maxNumOfOrders
+FROM FoodItems F left join (Contains C natural join Orders O) using (foodItemID)
+GROUP BY (F.foodItemID, DATE(O.orderPlacedTimeStamp)) 
+ORDER BY F.foodItemID, DATE(O.orderPlacedTimeStamp);
 
 create view CustPerMonth(month, year, numCustCreated) as
     (SELECT to_char(to_timestamp(res.month::text,'MM'), 'Mon') as month, year, numCustCreated  
@@ -451,4 +489,67 @@ create view TotalCostPerMonth(month, year, totalOrders, totalOrdersSum) as
                FROM Orders O join OrderCosts using (orderid) 
                GROUP BY 1, 2
                ORDER BY year, month) as res);
-               
+
+/* Additional triggers that can only be created after mock data is inserted */
+
+-- Sets food availability to false if max number is met and no exception raised.
+-- Assumes that insertion of new rows in Orders and Contains are done atomically.
+CREATE OR REPLACE FUNCTION check_food_availability() RETURNS TRIGGER 
+    AS $$
+DECLARE
+    selectedFoodItemID  INTEGER;
+BEGIN
+    SELECT T.foodItemID INTO selectedFoodItemID
+    FROM TotalFoodItemsOrderedPerDay T
+    WHERE T.numOrdered > T.maxNumOfOrders
+    OR T.availabilityStatus = false;
+
+    IF selectedFoodItemID IS NOT NULL THEN
+        RAISE EXCEPTION 'Food item ordered is either unavailable or amount ordered is not allowed';
+    ELSE
+        update FoodItems
+        set availabilityStatus = false
+        where foodItemID = (
+            SELECT T.foodItemID
+            FROM TotalFoodItemsOrderedPerDay T
+            WHERE T.foodItemID = foodItemID
+            AND T.dateOfOrder >= ALL (
+                SELECT T2.dateOfOrder
+                FROM TotalFoodItemsOrderedPerDay T2
+                WHERE T.foodItemID = T2.foodItemID
+            )
+            AND T.numOrdered = T.maxNumOfOrders
+        );
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS after_new_contains_trigger ON Contains CASCADE;
+CREATE TRIGGER after_new_contains_trigger 
+    AFTER INSERT ON Contains
+    FOR EACH ROW EXECUTE FUNCTION check_food_availability();
+
+-- Resets food availability before the first order of the day.
+CREATE OR REPLACE FUNCTION reset_food_availability() RETURNS TRIGGER
+    AS $$
+DECLARE
+    mostRecentTimeStamp TIMESTAMP;
+BEGIN
+    SELECT O.orderPlacedTimeStamp INTO mostRecentTimeStamp
+    FROM Orders O
+    WHERE O.orderID + 1 = NEW.orderID
+    AND DATE(O.orderPlacedTimeStamp) = DATE(NEW.orderPlacedTimeStamp);
+
+    IF mostRecentTimeStamp IS NULL THEN
+        update FoodItems
+        set availabilityStatus = true;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS after_new_orders_trigger ON Orders CASCADE;
+CREATE TRIGGER after_new_orders_trigger 
+    AFTER INSERT ON Orders
+    FOR EACH ROW EXECUTE FUNCTION reset_food_availability();      
