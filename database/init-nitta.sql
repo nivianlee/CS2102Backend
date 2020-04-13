@@ -394,7 +394,7 @@ CREATE TRIGGER orders_in_requests_trigger
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
 \copy Requests(orderID, customerID, paymentID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
 \copy Owns(customerID, creditCardNumber) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Owns.csv' DELIMITER ',' CSV HEADER;
-\copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Addresses_test.csv' DELIMITER ',' CSV HEADER;
+\copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
 -- \copy SavedAddresses(address) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
 -- \copy RecentAddresses(address) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
 \copy Rates(customerID, riderID, orderID, rating) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;

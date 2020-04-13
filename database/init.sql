@@ -217,22 +217,24 @@ CREATE TABLE Owns (
 
 -- combine Stores and Addresses
 CREATE TABLE Addresses (
-    address VARCHAR(100) PRIMARY KEY,
+    addressID SERIAL PRIMARY KEY,
+    address VARCHAR(100),
     addressTimeStamp TIMESTAMP NOT NULL,
+    postalCode INTEGER NOT NULL,
     customerID INTEGER NOT NULL REFERENCES Customers
 );
 
-CREATE TABLE SavedAddresses (
-    -- might have some issue here without a link to the customerID
-    -- does multiple customerID having the same address cause an issue? if not, then should be fine
-    address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
-);
+-- CREATE TABLE SavedAddresses (
+--     -- might have some issue here without a link to the customerID
+--     -- does multiple customerID having the same address cause an issue? if not, then should be fine
+--     address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
+-- );
 
-CREATE TABLE RecentAddresses (
-    -- might have some issue here without a link to the customerID
-    -- does multiple customerID having the same address cause an issue? if not, then should be fine
-    address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
-);
+-- CREATE TABLE RecentAddresses (
+--     -- might have some issue here without a link to the customerID
+--     -- does multiple customerID having the same address cause an issue? if not, then should be fine
+--     address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
+-- );
 
 CREATE TABLE Rates (
     customerID INTEGER REFERENCES Customers,
@@ -421,9 +423,9 @@ CREATE TRIGGER review_trigger
 \copy Requests(orderID, paymentID, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
 \copy Reviews(reviewID, reviewImg, reviewMsg, customerID, foodItemID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
 \copy Owns(customerID, creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Owns.csv'DELIMITER ',' CSV HEADER;
-\copy Addresses(address, addressTimeStamp, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
-\copy SavedAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
-\copy RecentAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
+\copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
+-- \copy SavedAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
+-- \copy RecentAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
 \copy Rates(customerID, riderID, orderID, rating) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
 \copy FTDayRanges(ftDayRangeID, ftDayRangeDes) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FTDayRanges.csv' DELIMITER ',' CSV HEADER;
 \copy FTShifts(ftShiftID, ftShiftDes) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FTShifts.csv' DELIMITER ',' CSV HEADER;
@@ -443,6 +445,7 @@ select setval('orders_orderid_seq',(select max(orderid) from Orders));
 select setval('payments_paymentid_seq',(select max(paymentid) from Payments));
 select setval('customers_customerid_seq',(select max(customerid) from Customers));
 select setval('owns_customerid_seq',(select max(customerid) from Owns));
+select setval('addresses_addressid_seq',(select max(addressid) from Addresses));
 
 -- Additional Views
 create view TotalCompletedOrders(orderID, orderPlacedTimeStamp, foodItemID, foodItemName, price, quantity, restaurantID) as
