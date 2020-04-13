@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const customers = require('./api/customer/customers');
 const fdsManagers = require('./api/admin/fdsmanagers');
 const restaurants = require('./api/admin/restaurants');
-const orders = require('./api/common/orders');
 const restaurantstaff = require('./api/admin/restaurantstaff');
 const foodItems = require('./api/common/fooditems');
 const promotions = require('./api/common/promotions');
@@ -51,17 +50,14 @@ app.delete('/customers/reviews', customers.deleteReview);
 // app.get('/customers/:customerid/recentaddresses', customers.getRecentAddresses);
 // app.get('/customers/:customerid/savedaddresses', customers.getSavedAddresses);
 
-// common: restaurant apis
+// restaurant apis
 app.get('/restaurants', restaurants.getRestaurants); // CFE done
 
-// common: fooditems apis
+// fooditems apis
 app.get('/fooditems', foodItems.getFoodItems);
 app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId); // CFE done
 app.get('/promotions', promotions.getPromotions);
 app.get('/promotions/:promotionid', promotions.getPromotionsByID);
-
-// common: orders api
-app.get('/orders/:customerid', orders.getAllOrdersByCusId);
 
 // admin: fdsManagers
 app.get('/fdsManagers/summaryOne', fdsManagers.getFDSManagerSummaryOne);
