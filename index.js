@@ -47,8 +47,6 @@ app.put('/customers/customerid/:customerid', customers.updateCustomer);
 app.put('/customers/reviews', customers.updateReview);
 app.delete('/customers/customerid/:customerid', customers.deleteCustomer);
 app.delete('/customers/reviews', customers.deleteReview);
-// app.get('/customers/:customerid/recentaddresses', customers.getRecentAddresses);
-// app.get('/customers/:customerid/savedaddresses', customers.getSavedAddresses);
 
 // restaurant apis
 app.get('/restaurants', restaurants.getRestaurants); // CFE done
