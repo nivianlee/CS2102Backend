@@ -186,8 +186,8 @@ CREATE TABLE Customers (
     customerEmail VARCHAR(50) UNIQUE NOT NULL,
     customerPassword VARCHAR(50) NOT NULL,
     customerPhone VARCHAR(8) UNIQUE NOT NULL,
-    customerAddress VARCHAR(50) NOT NULL,
-    customerPostalCode INTEGER NOT NULL,
+    -- customerAddress VARCHAR(50) NOT NULL,
+    -- customerPostalCode INTEGER NOT NULL,
     rewardPoints INTEGER NOT NULL DEFAULT 0,
     dateCreated DATE NOT NULL
 );
@@ -417,7 +417,7 @@ CREATE TRIGGER review_trigger
 \copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
 \copy Applies(orderID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
 \copy Contains(quantity, foodItemID, orderID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
-\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
+\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, rewardPoints, dateCreated) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
 \copy CreditCards(creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
 \copy Requests(orderID, paymentID, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
