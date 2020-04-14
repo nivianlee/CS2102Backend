@@ -173,7 +173,7 @@ CREATE TABLE Customers (
 );
 
 CREATE TABLE CreditCards (
-    customerID INTEGER REFERENCES Customers,
+    customerID INTEGER REFERENCES Customers(customerID),
     creditCardNumber VARCHAR(16) UNIQUE,
     creditCardName VARCHAR(50),
     expiryMonth INTEGER check (expiryMonth >= 1 and expiryMonth <= 12),
