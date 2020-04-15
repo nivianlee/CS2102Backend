@@ -335,9 +335,26 @@ const getPastOrders = (request, response) => {
   FROM Requests R natural join Payments P natural join Orders O
   WHERE customerID = $1
   AND O.status = true
+  ORDER BY orderPlacedTimeStamp desc
 `;
-
   pool.query(query, [customerid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
+const getAnOrderByCusId = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+  const orderid = parseInt(request.params.orderid);
+  const query = `
+  SELECT *
+  FROM Requests R natural join Contains C
+  WHERE customerID = $1
+  AND orderID = $2
+`;
+  pool.query(query, [customerid, orderid], (error, results) => {
     if (error) {
       throw error;
     }
@@ -453,6 +470,7 @@ module.exports = {
   deleteAddress,
   getCurrentOrders,
   getPastOrders,
+  getAnOrderByCusId,
   getAllReviews,
   getReviewsForFoodItem,
   postReview,

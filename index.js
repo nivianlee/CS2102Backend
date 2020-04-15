@@ -39,6 +39,7 @@ app.put('/customers/:customerid/addresses', customers.updateAddress);
 app.delete('/customers/:customerid/addresses/:addressid', customers.deleteAddress);
 app.get('/customers/currentorders/:customerid', customers.getCurrentOrders);
 app.get('/customers/pastorders/:customerid', customers.getPastOrders);
+app.get('/customers/:customerid/order/:orderid', customers.getAnOrderByCusId);
 app.get('/customers/reviews', customers.getAllReviews);
 app.get('/customers/reviews/:fooditemid', customers.getReviewsForFoodItem);
 app.post('/customers', customers.createCustomer);
