@@ -1,9 +1,10 @@
 const pool = require('../../pool.js');
+const fs = require('fs');
 
 const createRestaurantStaff = (request, response) => {
   const data = {
     name: request.body.restaurantstaffname,
-    restaurantid: request.body.restaurantid
+    restaurantid: request.body.restaurantid,
   };
   const values = [data.name, data.restaurantid];
   pool.query(
@@ -22,7 +23,7 @@ const updateRestaurantStaff = (request, response) => {
   const data = {
     name: request.body.restaurantstaffname,
     restaurantid: request.body.restaurantid,
-    restaurantstaffid: request.params.restaurantstaffid
+    restaurantstaffid: request.params.restaurantstaffid,
   };
   const values = [data.name, data.restaurantid, data.restaurantstaffid];
   pool.query(
@@ -50,21 +51,31 @@ const deleteRestaurantStaff = (request, response) => {
 
 const createFoodItem = (request, response) => {
   const data = {
-    name: request.body.fooditemname,
+    fooditemname: request.body.fooditemname,
     price: request.body.price,
+    availabilitystatus: request.body.availabilitystatus,
     image: request.body.image,
     maxnumoforders: request.body.maxnumoforders,
     category: request.body.category,
     restaurantid: request.body.restaurantid,
-    restaurantstaffid: request.body.restaurantstaffid
   };
-  const values = [data.name, data.price, data.image, data.maxnumoforders, data.category, data.restaurantid];
+
+  const values = [
+    data.fooditemname,
+    data.price,
+    data.availabilitystatus,
+    data.image,
+    data.maxnumoforders,
+    data.category,
+    data.restaurantid,
+  ];
 
   pool.query(
-    'INSERT INTO FoodItems (foodItemName, price, image, maxNumOfOrders, category, restaurantID) VALUES ($1, $2, $3, $4, $5, $6)',
+    'INSERT INTO FoodItems (foodItemName, price, availabilitystatus, image, maxNumOfOrders, category, restaurantID) VALUES ($1, $2, $3, $4, $5, $6, $7)',
     values,
     (error, results) => {
       if (error) {
+        console.log(error);
         throw error;
       }
       response.status(201).send({ message: 'Food item has been added successfully!' });
@@ -80,7 +91,7 @@ const updateFoodItem = (request, response) => {
     image: request.body.image,
     maxnumoforders: request.body.maxnumoforders,
     category: request.body.category,
-    fooditemid: request.body.fooditemid
+    fooditemid: request.body.fooditemid,
   };
   const values = [data.name, data.price, data.image, data.maxnumoforders, data.category, data.fooditemid];
 
@@ -228,5 +239,5 @@ module.exports = {
   getMonthlyCompletedOrders,
   getMonthlyCompletedOrdersStatistics,
   getMonthlyFavouriteFoodItems,
-  getPromotionalCampaignsStatistics
+  getPromotionalCampaignsStatistics,
 };
