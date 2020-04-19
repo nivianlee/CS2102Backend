@@ -248,21 +248,27 @@ CREATE TABLE Shifts(
     shiftTwoEnd TIME NOT NULL
 );
 
+-- Weak entity wrt to PartTime riders
+-- Partial Key: startTime, endTime, week, day
+-- Absorbs Has relationship wrt to PartTime riders to enforce exactly one  
 CREATE TABLE PartTimeSchedules(
     riderID INTEGER REFERENCES Riders ON DELETE CASCADE,
     startTime TIME NOT NULL,
     endTime TIME NOT NULL,
-    duration INTEGER NOT NULL,
-    day INTEGER NOT NULL,
-    PRIMARY KEY(riderID, startTime, endTime, day)
+    week INTEGER NOT NULL, -- 1 <= week <= 52
+    day INTEGER NOT NULL, -- 1 <= day <= 7
+    PRIMARY KEY(riderID, startTime, endTime, week, day) -- references strong entity's pkey riderID 
 );
 
+-- Weak entity wrt to FullTime riders 
+-- Partial key: month
+-- Absorbs Uses relation on Shifts and DayRanges to enforce exactly one
 CREATE TABLE FullTimeSchedules(
     riderID INTEGER REFERENCES Riders ON DELETE CASCADE,
     shiftID INTEGER REFERENCES Shifts,
     rangeID INTEGER REFERENCES DayRanges,
     month INTEGER NOT NULL,
-    PRIMARY KEY(riderID, month)
+    PRIMARY KEY(riderID, month) -- references strong entity's pkey riderID
 );
 
 -- Create triggers after defining schema
@@ -365,37 +371,46 @@ DECLARE
   numPartTimeInHour INTEGER;
   numFullTimeInHour INTEGER;
   time_hour_string VARCHAR(20);
+  m INTEGER;
+  weeks INTEGER ARRAY;
+  w INTEGER;
 BEGIN
-  FOR d IN 1..7 LOOP -- Iterate through each day 
-    FOR hour IN 10..21 LOOP -- Iterate through each hour, exclude 2200 because work hours stop after 2200
-      numPartTimeInHour := 0;
-      numFullTimeInHour := 0;
-      time_hour_string := to_char(hour, '99') || ':00:00'; 
-      
-      -- In PartTimeSchedules, match by day then check if the hour lies in any of the startTime, endTime ranges. 
-      -- Count tuples that meet requirements. 
-      SELECT COUNT(*) INTO numPartTimeInHour 
-      FROM PartTimeSchedules P
-      WHERE d = P.day
-      AND (time_hour_string::time, time_hour_string::time) OVERLAPS (startTime, endTime);
+  SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
+  -- Need to ensure all months MWS and corresponding weeks' WWS exist 
+  FOREACH w IN ARRAY weeks LOOP -- weeks do exist, check all weeks
+    m := CEILING(w / 4::float); -- month may not exist in 
+    FOR d IN 1..7 LOOP -- Iterate through each day 
+      FOR hour IN 10..21 LOOP -- Iterate through each hour, exclude 2200 because work hours stop after 2200
+        numPartTimeInHour := 0;
+        numFullTimeInHour := 0;
+        time_hour_string := to_char(hour, '99') || ':00:00'; 
 
-      -- In FullTimeSchedules match by day in range, check if hour lies in any of the shift ranges -- use overlaps  
-      -- Count tuples that meet requirements.
-      SELECT COUNT(*) INTO numFullTimeInHour
-      FROM FullTimeSchedules F 
-        JOIN Shifts using (shiftID)
-        JOIN DayRanges using (rangeID)
-      WHERE (SELECT d = ANY(range))
-      AND (
-          (time_hour_string::time, time_hour_string::time) OVERLAPS (shiftOneStart, shiftOneEnd)
-          OR 
-          (time_hour_string::time, time_hour_string::time) OVERLAPS (shiftTwoStart, shiftTwoEnd)
-        );
+        -- In PartTimeSchedules, match by day then check if the hour lies in any of the startTime, endTime ranges. 
+        -- Count tuples that meet requirements. 
+        SELECT COUNT(*) INTO numPartTimeInHour 
+        FROM PartTimeSchedules P
+        WHERE d = P.day and w = P.week
+        AND (time_hour_string::time, time_hour_string::time) OVERLAPS (startTime, endTime);
 
-      IF (numFullTimeInHour + numPartTimeInHour) < 5 THEN 
-        RAISE exception 'Day % at Hour % does not have at least 5 riders', d, hour; 
-      END IF;
-    END LOOP; 
+        -- In FullTimeSchedules match by month, then day in range, check if hour lies in any of the shift ranges -- use overlaps  
+        -- Count tuples that meet requirements.
+        SELECT COUNT(*) INTO numFullTimeInHour
+        FROM FullTimeSchedules F 
+          JOIN Shifts using (shiftID)
+          JOIN DayRanges using (rangeID)
+        WHERE m = F.month
+        AND (SELECT d = ANY(range))
+        AND (
+            (time_hour_string::time, time_hour_string::time) OVERLAPS (shiftOneStart, shiftOneEnd)
+            OR 
+            (time_hour_string::time, time_hour_string::time) OVERLAPS (shiftTwoStart, shiftTwoEnd)
+          );
+
+        IF (numFullTimeInHour + numPartTimeInHour) < 5 THEN 
+          RAISE exception 'Month % Week % Day % at Hour % does not have at least 5 riders', m, w, d, hour; 
+        END IF;
+      END LOOP; 
+    END LOOP;
   END LOOP;
   RETURN NULL;
 END; 
@@ -422,23 +437,35 @@ DECLARE
   violatedDay INTEGER;
   violatedStartTime TIME;
   violatedEndTime TIME;
+  w INTEGER;
+  weeks INTEGER ARRAY;
+  rid INTEGER;
+  riderIDs INTEGER ARRAY;
 BEGIN
-  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
-  FOR rid in 1..numberRiders LOOP
-    FOR d in 1..7 LOOP
-      /*
-      Checks if each interval starts and ends on the hour.
-      */
-      SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
-      FROM PartTimeSchedules P
-      WHERE P.riderID = rid
-      AND P.day = d 
-      AND (
-           (EXTRACT(MINUTE FROM P.startTime) > 0)
-           OR (EXTRACT(SECOND FROM P.startTime) > 0)
-           OR (EXTRACT(MINUTE FROM P.endTime) > 0)
-           OR (EXTRACT(SECOND FROM P.endTime) > 0)
-      );
+  SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
+  SELECT ARRAY(SELECT riderID FROM Riders) INTO riderIDs;
+  FOREACH rid in ARRAY riderIDs LOOP
+    FOREACH w in ARRAY weeks LOOP
+      FOR d in 1..7 LOOP
+        /*
+        Checks if each interval starts and ends on the hour.
+        */
+        SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
+        FROM PartTimeSchedules P
+        WHERE P.riderID = rid
+        AND P.week = w
+        AND P.day = d 
+        AND (
+            (EXTRACT(MINUTE FROM P.startTime) > 0)
+            OR (EXTRACT(SECOND FROM P.startTime) > 0)
+            OR (EXTRACT(MINUTE FROM P.endTime) > 0)
+            OR (EXTRACT(SECOND FROM P.endTime) > 0)
+        );
+
+        IF (violatedDay IS NOT NULL) THEN 
+          RAISE exception 'Rider % interval at Week % Day % at (% - %)', rid, w, d, violatedStartTime, violatedEndTime;
+        END IF;  
+      END LOOP;
     END LOOP;
   END LOOP;
   RETURN NULL;
@@ -450,21 +477,29 @@ CREATE OR REPLACE FUNCTION check_part_time_riders_constraints_between_10_and_48_
 DECLARE 
   numberRiders INTEGER;
   numberHoursInRiderWWS INTEGER;
+  w INTEGER; 
+  weeks INTEGER ARRAY;
+  rid INTEGER;
+  riderIDs INTEGER ARRAY;
 BEGIN
-  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
-  FOR rid in 1..numberRiders LOOP
-    /*
-    Checks total number of hours in WWS is at least 10 and at most 48 
-    */
-    SELECT SUM(EXTRACT(HOUR FROM endTime) - EXTRACT(HOUR FROM startTime)) INTO numberHoursInRiderWWS
-    FROM PartTimeSchedules P
-    WHERE P.riderID = rid;
+  SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
+  SELECT ARRAY(SELECT riderID FROM Riders) INTO riderIDs;
+  FOREACH w in ARRAY weeks LOOP
+    FOREACH rid in ARRAY riderIDs LOOP
+      /*
+      Checks total number of hours in all WWS are at least 10 and at most 48 
+      */
+      SELECT SUM(EXTRACT(HOUR FROM endTime) - EXTRACT(HOUR FROM startTime)) INTO numberHoursInRiderWWS
+      FROM PartTimeSchedules P
+      WHERE P.riderID = rid
+      AND P.week = w;
 
-    IF (numberHoursInRiderWWS < 10) THEN 
-      RAISE exception 'Rider % needs to work at least 10 hours in WWS', rid;
-    ELSIF (numberHoursInRiderWWS > 48) THEN 
-      RAISE exception 'Rider % needs to work at most 48 hours in WWS', rid;
-    END IF;  
+      IF (numberHoursInRiderWWS < 10) THEN 
+        RAISE exception 'Rider % needs to work at least 10 hours in WWS', rid;
+      ELSIF (numberHoursInRiderWWS > 48) THEN 
+        RAISE exception 'Rider % needs to work at most 48 hours in WWS', rid;
+      END IF;  
+    END LOOP;
   END LOOP;
   RETURN NULL;
 END;
@@ -477,28 +512,37 @@ DECLARE
   violatedDay INTEGER;
   violatedStartTime TIME;
   violatedEndTime TIME;
+  w INTEGER;
+  weeks INTEGER ARRAY;
+  rid INTEGER;
+  riderIDs INTEGER ARRAY;
 BEGIN
-  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
-  FOR rid in 1..numberRiders LOOP
-    FOR d in 1..7 LOOP
-      /*
-      Checks if at least one hour of break between two consecutive hour intervals.
-      */
-      SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
-      FROM PartTimeSchedules P 
-      WHERE P.riderID = rid
-      AND P.day = d
-      AND EXISTS (SELECT 1
-                  FROM PartTimeSchedules P2
-                  WHERE P2.riderID = P.riderID
-                  AND P2.day = P.day
-                  AND (EXTRACT(HOUR FROM P.startTime) - EXTRACT(HOUR FROM P2.endTime) = 0) -- Indicates startTime = endTime in two different intervals 
-                  ); 
-      
-      IF (violatedDay IS NOT NULL) THEN 
-        RAISE exception 'Rider % WWS at Day % for interval % - % is not valid. 
-        Must have at least one hour of break between two consecutive hour intervals.', rid, violatedDay, violatedStartTime, violatedEndTime;
-      END IF;
+  SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
+  SELECT ARRAY(SELECT riderID FROM Riders) INTO riderIDs;
+  FOREACH rid in ARRAY riderIDs LOOP
+    FOREACH w in ARRAY weeks LOOP
+      FOR d in 1..7 LOOP
+        /*
+        Checks if at least one hour of break between two consecutive hour intervals.
+        */
+        SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
+        FROM PartTimeSchedules P 
+        WHERE P.riderID = rid
+        AND P.week = w 
+        AND P.day = d
+        AND EXISTS (SELECT 1
+                    FROM PartTimeSchedules P2
+                    WHERE P2.riderID = P.riderID
+                    AND P2.week= P.week
+                    AND P2.day = P.day
+                    AND (EXTRACT(HOUR FROM P.startTime) - EXTRACT(HOUR FROM P2.endTime) = 0) -- Indicates startTime = endTime in two different intervals 
+                    ); 
+        
+        IF (violatedDay IS NOT NULL) THEN 
+          RAISE exception 'Rider % WWS at Week % Day % for interval % - % is not valid. 
+          Must have at least one hour of break between two consecutive hour intervals.', rid, w, violatedDay, violatedStartTime, violatedEndTime;
+        END IF;
+      END LOOP;
     END LOOP; 
   END LOOP;
   RETURN NULL;
@@ -512,23 +556,31 @@ DECLARE
   violatedDay INTEGER;
   violatedStartTime TIME;
   violatedEndTime TIME;
+  w INTEGER;
+  weeks INTEGER ARRAY;
+  rid INTEGER;
+  riderIDs INTEGER ARRAY;
 BEGIN
-  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
-  FOR rid in 1..numberRiders LOOP
-    FOR d in 1..7 LOOP
-      /*
-      Checks that each interval does not exceed four hours.
-      */
-      SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
-      FROM PartTimeSchedule P
-      WHERE P.riderID = rid
-      AND P.day = d 
-      AND EXTRACT(HOUR FROM P.endTime) - EXTRACT(HOUR FROM P.startTime) > 4;
+  SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
+  SELECT ARRAY(SELECT riderID FROM Riders) INTO riderIDs;
+  FOREACH rid in ARRAY riderIDs LOOP
+    FOREACH w in ARRAY weeks LOOP
+      FOR d in 1..7 LOOP
+        /*
+        Checks that each interval does not exceed four hours.
+        */
+        SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
+        FROM PartTimeSchedules P
+        WHERE P.riderID = rid
+        AND P.week = w
+        AND P.day = d 
+        AND EXTRACT(HOUR FROM P.endTime) - EXTRACT(HOUR FROM P.startTime) > 4;
 
-      IF (violatedDay IS NOT NULL) THEN 
-        RAISE exception 'Rider % WWS at Day % for interval % - % cannot be exceed four hours.',
-                         rid, violatedDay, violatedStartTime, violatedEndTime;
-      END IF;
+        IF (violatedDay IS NOT NULL) THEN 
+          RAISE exception 'Rider % WWS at Week % Day % for interval % - % cannot be exceed four hours.',
+                          rid, w, violatedDay, violatedStartTime, violatedEndTime;
+        END IF;
+      END LOOP;
     END LOOP; 
   END LOOP;
   RETURN NULL;
@@ -542,52 +594,64 @@ DECLARE
   violatedDay INTEGER;
   violatedStartTime TIME;
   violatedEndTime TIME;
+  w INTEGER;
+  weeks INTEGER ARRAY;
+  rid INTEGER;
+  riderIDs INTEGER ARRAY;
 BEGIN
-  SELECT COUNT(riderID) INTO numberRiders FROM Riders;
-  FOR rid in 1..numberRiders LOOP
-    FOR d in 1..7 LOOP
-      /*
-      Checks that no intervals overlap in a rider's WWS or exist between 1000-2200. 
-      */
-      SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
-      FROM PartTimeSchedules P 
-      WHERE P.riderID = rid
-      AND P.day = d
-      AND EXISTS (SELECT 1
-                  FROM PartTimeSchedules P2
-                  WHERE P2.riderID = P.riderID
-                  AND P2.day = P.day
-                  AND ((P.startTime, P.endTime) <> (P2.startTime, P2.endTime)) -- differentiate common intervals 
-                  AND ((P.startTime, P.endTime) OVERLAPS (P2.startTime, P2.endTime)) 
-                  )
-      OR (NOT (P.startTime, P.endTime) OVERLAPS ('10:00:00'::TIME, '22:00:00'::TIME));
+  SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
+  SELECT ARRAY(SELECT riderID FROM Riders) INTO riderIDs;
+  FOREACH rid in ARRAY riderIDs LOOP
+    FOREACH w in ARRAY weeks LOOP
+      FOR d in 1..7 LOOP
+        /*
+        Checks that no intervals overlap in a rider's WWS or exist between 1000-2200. 
+        */
+        SELECT P.day, P.startTime, P.endTime INTO violatedDay, violatedStartTime, violatedEndTime
+        FROM PartTimeSchedules P 
+        WHERE P.riderID = rid
+        AND P.week = w
+        AND P.day = d
+        AND EXISTS (SELECT 1
+                    FROM PartTimeSchedules P2
+                    WHERE P2.riderID = P.riderID
+                    AND P2.week = P.week
+                    AND P2.day = P.day
+                    AND ((P.startTime, P.endTime) <> (P2.startTime, P2.endTime)) -- differentiate common intervals 
+                    AND ((P.startTime, P.endTime) OVERLAPS (P2.startTime, P2.endTime)) 
+                    )
+        OR (NOT (P.startTime, P.endTime) OVERLAPS ('10:00:00'::TIME, '22:00:00'::TIME));
 
-      IF (violatedDay IS NOT NULL) THEN 
-        RAISE exception 'Rider % WWS at Day % for interval % - % cannot overlap with another existing interval in the WWS and must exist between 1000-2200',
-                         rid, violatedDay, violatedStartTime, violatedEndTime;
-      END IF;
-    END LOOP; 
+        IF (violatedDay IS NOT NULL) THEN 
+          RAISE exception 'Rider % WWS at Week % Day % for interval % - % cannot overlap with another existing interval in the WWS and must exist between 1000-2200',
+                          rid, w, violatedDay, violatedStartTime, violatedEndTime;
+        END IF;
+      END LOOP; 
+    END LOOP;
   END LOOP;
   RETURN NULL;
 END;
 $$ language plpgsql;
 
+-- After ROW-level triggers take some time due to the number of checks done per insertion.
 DROP TRIGGER IF EXISTS part_time_riders_schedule_start_and_end_on_hour_trigger ON PartTimeSchedules CASCADE;
-CREATE TRIGGER part_time_riders_schedule_start_and_end_on_hour_trigger
+CREATE CONSTRAINT TRIGGER part_time_riders_schedule_start_and_end_on_hour_trigger
   AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
   ON PartTimeSchedules
-    FOR EACH STATEMENT
+    DEFERRABLE INITIALLY DEFERRED
+    FOR EACH ROW
     EXECUTE FUNCTION check_part_time_riders_constraints_start_and_end_on_hour();
 
 DROP TRIGGER IF EXISTS part_time_riders_schedule_between_10_and_48_hours_trigger ON PartTimeSchedules CASCADE;
-CREATE TRIGGER part_time_riders_schedule_between_10_and_48_hours_trigger
+CREATE CONSTRAINT TRIGGER part_time_riders_schedule_between_10_and_48_hours_trigger
   AFTER UPDATE OF riderID, startTime, endTime OR INSERT OR DELETE 
   ON PartTimeSchedules
-    FOR EACH STATEMENT
+    DEFERRABLE INITIALLY DEFERRED
+    FOR EACH ROW
     EXECUTE FUNCTION check_part_time_riders_constraints_between_10_and_48_hours();
 
-DROP TRIGGER IF EXISTS part_time_riders_schedule_1_hour_break ON PartTimeSchedules CASCADE;
-CREATE TRIGGER part_time_riders_schedule_1_hour_break
+DROP TRIGGER IF EXISTS part_time_riders_schedule_1_hour_break_trigger ON PartTimeSchedules CASCADE;
+CREATE TRIGGER part_time_riders_schedule_1_hour_break_trigger
   AFTER UPDATE OF riderID, startTime, endTime OR INSERT  
   ON PartTimeSchedules
     FOR EACH STATEMENT
@@ -595,14 +659,14 @@ CREATE TRIGGER part_time_riders_schedule_1_hour_break
 
 DROP TRIGGER IF EXISTS part_time_riders_schedule_max_interval_4_hours_trigger ON PartTimeSchedules CASCADE;
 CREATE TRIGGER part_time_riders_schedule_max_interval_4_hours_trigger
-  AFTER UPDATE OF riderID, startTime, endTime OR INSERT 
+  AFTER UPDATE OF riderID, startTime, endTime, week OR INSERT 
   ON PartTimeSchedules
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_part_time_riders_constraints_max_interval_4_hours();
 
 DROP TRIGGER IF EXISTS part_time_riders_schedule_valid_intervals_trigger ON PartTimeSchedules CASCADE;
 CREATE TRIGGER part_time_riders_schedule_valid_intervals_trigger
-  AFTER UPDATE OF riderID, startTime, endTime OR INSERT  
+  AFTER UPDATE OF riderID, startTime, endTime, week OR INSERT  
   ON PartTimeSchedules
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_part_time_riders_constraints_valid_intervals();
@@ -637,7 +701,7 @@ CREATE TRIGGER part_time_riders_schedule_valid_intervals_trigger
 \copy RecentAddresses(address) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
 \copy Rates(customerID, riderID, orderID, rating) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
 \copy Shifts(shiftID, shiftOneStart, shiftOneEnd, shiftTwoStart, shiftTwoEnd) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Shifts.csv' DELIMITER ',' CSV HEADER;
-\copy PartTimeSchedules(riderID, startTime, endTime, duration, day) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PartTimeSchedules.csv' DELIMITER ',' CSV HEADER;
+\copy PartTimeSchedules(riderID, startTime, endTime, week, day) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PartTimeSchedules.csv' DELIMITER ',' CSV HEADER;
 
 -- Insert DayRanges values
 INSERT INTO DayRanges VALUES (1,'{1,2,3,4,5}');
