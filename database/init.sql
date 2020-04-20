@@ -149,24 +149,6 @@ CREATE TABLE Orders (
     deliveryID INTEGER NOT NULL REFERENCES DeliveryFee
 );
 
-CREATE TABLE CreditCards (
-    creditCardNumber VARCHAR(32) PRIMARY KEY
-);
-
--- Absorbs PaidBy, Uses
--- Partial Key + Strong entity primary key used to enforce Weak-Entity R/S
--- To enforce TP constraint with Orders, use triggers
--- Triggers: Enforce Only 1 of the 3 booleans is true
-CREATE TABLE Payments (
-    paymentID SERIAL UNIQUE,
-    orderID INTEGER UNIQUE REFERENCES Orders,
-    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
-    useCash BOOLEAN,
-    useCreditCard BOOLEAN,
-    useRewardPoints BOOLEAN,
-    PRIMARY KEY(paymentID, orderID)
-);
-
 CREATE TABLE Applies(
     orderID INTEGER NOT NULL REFERENCES Orders,
     promotionID INTEGER NOT NULL REFERENCES Promotions,
@@ -186,10 +168,31 @@ CREATE TABLE Customers (
     customerEmail VARCHAR(50) UNIQUE NOT NULL,
     customerPassword VARCHAR(50) NOT NULL,
     customerPhone VARCHAR(8) UNIQUE NOT NULL,
-    customerAddress VARCHAR(50) NOT NULL,
-    customerPostalCode INTEGER NOT NULL,
     rewardPoints INTEGER NOT NULL DEFAULT 0,
     dateCreated DATE NOT NULL
+);
+
+CREATE TABLE CreditCards (
+    customerID INTEGER REFERENCES Customers(customerID),
+    creditCardNumber VARCHAR(16) UNIQUE,
+    creditCardName VARCHAR(50),
+    expiryMonth INTEGER check (expiryMonth >= 1 and expiryMonth <= 12),
+    expiryYear INTEGER check (expiryYear <= 2100 and expiryYear >= EXTRACT(YEAR FROM CURRENT_DATE)),
+    PRIMARY KEY (customerID, creditCardNumber)
+);
+
+-- Absorbs PaidBy, Uses
+-- Partial Key + Strong entity primary key used to enforce Weak-Entity R/S
+-- To enforce TP constraint with Orders, use triggers
+-- Triggers: Enforce Only 1 of the 3 booleans is true
+CREATE TABLE Payments (
+    paymentID SERIAL UNIQUE,
+    orderID INTEGER UNIQUE REFERENCES Orders,
+    creditCardNumber VARCHAR(16) REFERENCES CreditCards(creditCardNumber),
+    useCash BOOLEAN,
+    useCreditCard BOOLEAN,
+    useRewardPoints BOOLEAN,
+    PRIMARY KEY(paymentID, orderID)
 );
 
 -- Combine Reviews and Posts
@@ -209,12 +212,6 @@ CREATE TABLE Requests (
     paymentID INTEGER UNIQUE NOT NULL REFERENCES Payments(paymentID)
 );
 
-CREATE TABLE Owns (
-    customerID SERIAL REFERENCES Customers,
-    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
-    PRIMARY KEY(customerID, creditCardNumber)
-);
-
 -- combine Stores and Addresses
 CREATE TABLE Addresses (
     addressID SERIAL PRIMARY KEY,
@@ -223,18 +220,6 @@ CREATE TABLE Addresses (
     postalCode INTEGER NOT NULL,
     customerID INTEGER NOT NULL REFERENCES Customers
 );
-
--- CREATE TABLE SavedAddresses (
---     -- might have some issue here without a link to the customerID
---     -- does multiple customerID having the same address cause an issue? if not, then should be fine
---     address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
--- );
-
--- CREATE TABLE RecentAddresses (
---     -- might have some issue here without a link to the customerID
---     -- does multiple customerID having the same address cause an issue? if not, then should be fine
---     address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
--- );
 
 CREATE TABLE Rates (
     customerID INTEGER REFERENCES Customers,
@@ -417,15 +402,12 @@ CREATE TRIGGER review_trigger
 \copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
 \copy Applies(orderID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
 \copy Contains(quantity, foodItemID, orderID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
-\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
-\copy CreditCards(creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
+\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, rewardPoints, dateCreated) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
+\copy CreditCards(customerID, creditCardNumber, creditCardName, expiryMonth, expiryYear) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
 \copy Requests(orderID, paymentID, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
 \copy Reviews(reviewID, reviewImg, reviewMsg, customerID, foodItemID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
-\copy Owns(customerID, creditCardNumber) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Owns.csv'DELIMITER ',' CSV HEADER;
 \copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
--- \copy SavedAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
--- \copy RecentAddresses(address) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
 \copy Rates(customerID, riderID, orderID, rating) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
 \copy FTDayRanges(ftDayRangeID, ftDayRangeDes) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FTDayRanges.csv' DELIMITER ',' CSV HEADER;
 \copy FTShifts(ftShiftID, ftShiftDes) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FTShifts.csv' DELIMITER ',' CSV HEADER;
@@ -444,7 +426,6 @@ select setval('riders_riderid_seq',(select max(riderid) from Riders));
 select setval('orders_orderid_seq',(select max(orderid) from Orders));
 select setval('payments_paymentid_seq',(select max(paymentid) from Payments));
 select setval('customers_customerid_seq',(select max(customerid) from Customers));
-select setval('owns_customerid_seq',(select max(customerid) from Owns));
 select setval('addresses_addressid_seq',(select max(addressid) from Addresses));
 
 -- Additional Views
