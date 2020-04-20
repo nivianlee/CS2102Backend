@@ -251,3 +251,23 @@ BEGIN;
     DELETE FROM FullTimeSchedules F -- delete all from shift
     WHERE shiftID <> 1;
 COMMIT;
+
+
+/* Tests for full_time_riders_schedule_valid_rider_trigger and part_time_riders_schedule_valid_rider_trigger*/
+-- Negative Test Case: Add PartTimeSchedule for full-time rider 
+BEGIN;
+    INSERT INTO Riders(riderID, riderName, riderEmail, contactNum, isOccupied, isFullTime, baseSalary)
+    VALUES (101, 'Dummy', 'dummy@dummymail.com', '12345678', TRUE, TRUE, 123);
+
+    INSERT INTO PartTimeSchedules(riderID, startTime, endTime, week, day)
+    VALUES (101, '10:00:00', '14:00:00', 16, 1);
+COMMIT;
+
+-- Negative Test Case: Add FullTimeSchedule for part-time rider 
+BEGIN;
+    INSERT INTO Riders(riderID, riderName, riderEmail, contactNum, isOccupied, isFullTime, baseSalary)
+    VALUES (101, 'Dummy', 'dummy@dummymail.com', '12345678', TRUE, FALSE, 123);
+
+    INSERT INTO FullTimeSchedules(riderID, shiftID, rangeID, month)
+    VALUES (101, 1, 1, 4);
+COMMIT;

@@ -671,6 +671,54 @@ CREATE TRIGGER part_time_riders_schedule_valid_intervals_trigger
     FOR EACH STATEMENT
     EXECUTE FUNCTION check_part_time_riders_constraints_valid_intervals();
 
+CREATE OR REPLACE FUNCTION check_part_time_rider_valid_rider() RETURNS TRIGGER 
+	AS $$ 
+DECLARE 
+  valid_rider INTEGER;
+BEGIN
+	SELECT riderID INTO valid_rider
+		FROM Riders 
+		WHERE riderID = NEW.riderID 
+    AND isFullTime = FALSE;
+
+	IF valid_rider IS NULL THEN 
+		RAISE exception 'Rider % is not a part-time rider ', NEW.riderID;
+	END IF;  
+  RETURN NULL;
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS part_time_riders_schedule_valid_rider_trigger ON PartTimeSchedules CASCADE;
+CREATE TRIGGER part_time_riders_schedule_valid_rider_trigger
+  AFTER UPDATE OF riderID OR INSERT  
+  ON PartTimeSchedules
+    FOR EACH ROW
+    EXECUTE FUNCTION check_part_time_rider_valid_rider();
+
+CREATE OR REPLACE FUNCTION check_full_time_rider_valid_rider() RETURNS TRIGGER 
+	AS $$ 
+DECLARE 
+  valid_rider INTEGER;
+BEGIN
+	SELECT riderID INTO valid_rider
+		FROM Riders 
+		WHERE riderID = NEW.riderID 
+    AND isFullTime = TRUE;
+
+	IF valid_rider IS NULL THEN 
+		RAISE exception 'Rider % is not a full-time rider ', NEW.riderID;
+	END IF;  
+  RETURN NULL;
+END; 
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS full_time_riders_schedule_valid_rider_trigger ON FullTimeSchedules CASCADE;
+CREATE TRIGGER full_time_riders_schedule_valid_rider_trigger
+  AFTER UPDATE OF riderID OR INSERT  
+  ON FullTimeSchedules
+    FOR EACH ROW
+    EXECUTE FUNCTION check_full_time_rider_valid_rider();
+
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
