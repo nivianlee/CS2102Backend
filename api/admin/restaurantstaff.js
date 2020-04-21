@@ -3,7 +3,7 @@ const pool = require('../../pool.js');
 const createRestaurantStaff = (request, response) => {
   const data = {
     name: request.body.restaurantstaffname,
-    restaurantid: request.body.restaurantid
+    restaurantid: request.body.restaurantid,
   };
   const values = [data.name, data.restaurantid];
   pool.query(
@@ -22,7 +22,7 @@ const updateRestaurantStaff = (request, response) => {
   const data = {
     name: request.body.restaurantstaffname,
     restaurantid: request.body.restaurantid,
-    restaurantstaffid: request.params.restaurantstaffid
+    restaurantstaffid: request.params.restaurantstaffid,
   };
   const values = [data.name, data.restaurantid, data.restaurantstaffid];
   pool.query(
@@ -50,50 +50,130 @@ const deleteRestaurantStaff = (request, response) => {
 
 const createFoodItem = (request, response) => {
   const data = {
-    name: request.body.fooditemname,
+    fooditemname: request.body.fooditemname,
     price: request.body.price,
+    availabilitystatus: request.body.availabilitystatus,
     image: request.body.image,
     maxnumoforders: request.body.maxnumoforders,
     category: request.body.category,
     restaurantid: request.body.restaurantid,
-    restaurantstaffid: request.body.restaurantstaffid
+    restaurantstaffid: parseInt(request.params.restaurantstaffid),
   };
-  const values = [data.name, data.price, data.image, data.maxnumoforders, data.category, data.restaurantid];
 
-  pool.query(
-    'INSERT INTO FoodItems (foodItemName, price, image, maxNumOfOrders, category, restaurantID) VALUES ($1, $2, $3, $4, $5, $6)',
-    values,
-    (error, results) => {
-      if (error) {
-        throw error;
-      }
-      response.status(201).send({ message: 'Food item has been added successfully!' });
+  const values = [
+    data.fooditemname,
+    data.price,
+    data.availabilitystatus,
+    data.image,
+    data.maxnumoforders,
+    data.category,
+    data.restaurantid,
+    data.restaurantstaffid,
+  ];
+
+  const query = `
+    INSERT INTO FoodItems (foodItemName, price, availabilitystatus, image, maxNumOfOrders, category, restaurantID)
+    SELECT $1, $2, $3, $4, $5, $6, $7
+    WHERE EXISTS (
+      SELECT 1
+      FROM RestaurantStaff
+      WHERE restaurantID = $7 AND restaurantStaffID = $8
+    ) RETURNING *`;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
     }
-  );
+    if (results.rows[0].length === 1) {
+      response.status(200).send({ message: `Food item ${results.rows[0].fooditemname} has been added successfully!` });
+    } else {
+      response.status(200).send({
+        message: `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`,
+      });
+    }
+  });
 };
 
 const updateFoodItem = (request, response) => {
   const data = {
-    name: request.body.fooditemname,
+    fooditemname: request.body.fooditemname,
     price: request.body.price,
-    availability: request.body.availability,
+    availabilitystatus: request.body.availabilitystatus,
     image: request.body.image,
     maxnumoforders: request.body.maxnumoforders,
     category: request.body.category,
-    fooditemid: request.body.fooditemid
+    restaurantid: request.body.restaurantid,
+    restaurantstaffid: parseInt(request.params.restaurantstaffid),
+    fooditemid: request.body.fooditemid,
   };
-  const values = [data.name, data.price, data.image, data.maxnumoforders, data.category, data.fooditemid];
 
-  pool.query(
-    'UPDATE FoodItems SET foodItemName = $1, price = $2, image = $3, maxNumOfOrders = $4, category = $5 WHERE foodItemID = $6',
-    values,
-    (error, results) => {
-      if (error) {
-        throw error;
-      }
-      response.status(201).send({ message: 'Food item has been updated successfully!' });
+  const values = [
+    data.fooditemname,
+    data.price,
+    data.availabilitystatus,
+    data.image,
+    data.maxnumoforders,
+    data.category,
+    data.restaurantid,
+    data.restaurantstaffid,
+    data.fooditemid,
+  ];
+
+  const query = `
+    UPDATE FoodItems SET foodItemName = $1, price = $2, availabilitystatus = $3, image = $4, maxNumOfOrders = $5, category = $6
+    WHERE foodItemID = $9 
+    AND EXISTS (
+      SELECT 1
+      FROM RestaurantStaff
+      WHERE restaurantID = $7 AND restaurantStaffID = $8
+    ) RETURNING *`;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
     }
-  );
+    if (results.rows[0].length === 1) {
+      response
+        .status(200)
+        .send({ message: `Food item ${results.rows[0].fooditemname} has been updated successfully!` });
+    } else {
+      response.status(200).send({
+        message: `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`,
+      });
+    }
+  });
+};
+
+const deleteFoodItem = (request, response) => {
+  const data = {
+    restaurantid: request.body.restaurantid,
+    restaurantstaffid: parseInt(request.params.restaurantstaffid),
+    fooditemid: request.body.fooditemid,
+  };
+
+  const values = [data.restaurantid, data.restaurantstaffid, data.fooditemid];
+
+  const query = `
+    DELETE FROM FoodItems 
+    WHERE foodItemID = $3
+    AND EXISTS (
+      SELECT 1
+      FROM RestaurantStaff
+      WHERE restaurantID = $1 AND restaurantStaffID = $2
+    ) RETURNING *`;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    if (results.rows.length === 1) {
+      response.status(201).send({ message: `Food item with id ${results.rows[0].fooditemid} has been deleted` });
+    } else {
+      response.status(200).send({
+        message: `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`,
+      });
+    }
+  });
 };
 
 const getAllCompletedOrders = (request, response) => {
@@ -224,9 +304,10 @@ module.exports = {
   deleteRestaurantStaff,
   createFoodItem,
   updateFoodItem,
+  deleteFoodItem,
   getAllCompletedOrders,
   getMonthlyCompletedOrders,
   getMonthlyCompletedOrdersStatistics,
   getMonthlyFavouriteFoodItems,
-  getPromotionalCampaignsStatistics
+  getPromotionalCampaignsStatistics,
 };
