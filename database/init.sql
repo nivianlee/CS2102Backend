@@ -20,10 +20,7 @@ DROP TABLE IF EXISTS Contains CASCADE;
 DROP TABLE IF EXISTS Customers CASCADE;
 DROP TABLE IF EXISTS Requests CASCADE;
 DROP TABLE IF EXISTS CreditCards CASCADE;
-DROP TABLE IF EXISTS Owns CASCADE;
 DROP TABLE IF EXISTS Addresses CASCADE;
-DROP TABLE IF EXISTS SavedAddresses CASCADE;
-DROP TABLE IF EXISTS RecentAddresses CASCADE;
 DROP TABLE IF EXISTS Riders  CASCADE;
 DROP TABLE IF EXISTS Rates CASCADE;
 DROP TABLE IF EXISTS PartTimeSchedules CASCADE;
@@ -121,15 +118,6 @@ CREATE TABLE Sets (
     PRIMARY KEY (managerID, deliveryID)
 );
 
--- Combine Reviews and Posts
-CREATE TABLE Reviews(
-    reviewID SERIAL,
-    reviewImg VARCHAR(50), 
-    reviewMsg VARCHAR(256) NOT NULL,
-    -- orderID INTEGER UNIQUE,
-    PRIMARY KEY (reviewID)
-);
-
 -- Combines MonthlySalaries, Riders
 -- MonthlySalary = baseSalary and deliveryFees which are based on criteria
 CREATE TABLE Riders (
@@ -157,24 +145,6 @@ CREATE TABLE Orders (
     deliveryID INTEGER NOT NULL REFERENCES DeliveryFee
 );
 
-CREATE TABLE CreditCards (
-    creditCardNumber VARCHAR(32) PRIMARY KEY
-);
-
--- Absorbs PaidBy, Uses
--- Partial Key + Strong entity primary key used to enforce Weak-Entity R/S
--- To enforce TP constraint with Orders, use triggers
--- Triggers: Enforce Only 1 of the 3 booleans is true
-CREATE TABLE Payments (
-    paymentID SERIAL UNIQUE,
-    orderID INTEGER UNIQUE REFERENCES Orders,
-    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
-    useCash BOOLEAN,
-    useCreditCard BOOLEAN,
-    useRewardPoints BOOLEAN,
-    PRIMARY KEY(paymentID, orderID)
-);
-
 CREATE TABLE Applies(
     orderID INTEGER NOT NULL REFERENCES Orders,
     promotionID INTEGER NOT NULL REFERENCES Promotions,
@@ -194,38 +164,57 @@ CREATE TABLE Customers (
     customerEmail VARCHAR(50) UNIQUE NOT NULL,
     customerPassword VARCHAR(50) NOT NULL,
     customerPhone VARCHAR(8) UNIQUE NOT NULL,
-    customerAddress VARCHAR(50) NOT NULL,
-    customerPostalCode INTEGER NOT NULL,
     rewardPoints INTEGER NOT NULL DEFAULT 0,
     dateCreated DATE NOT NULL
 );
 
-CREATE TABLE Requests (
-    orderID SERIAL REFERENCES Orders(orderID),
+CREATE TABLE CreditCards (
     customerID INTEGER REFERENCES Customers(customerID),
-    paymentID INTEGER REFERENCES Payments(paymentID),
-    PRIMARY KEY(orderID, paymentID)
+    creditCardNumber VARCHAR(16) UNIQUE,
+    creditCardName VARCHAR(50),
+    expiryMonth INTEGER check (expiryMonth >= 1 and expiryMonth <= 12),
+    expiryYear INTEGER check (expiryYear <= 2100 and expiryYear >= EXTRACT(YEAR FROM CURRENT_DATE)),
+    PRIMARY KEY (customerID, creditCardNumber)
 );
 
-CREATE TABLE Owns (
-    customerID SERIAL REFERENCES Customers,
-    creditCardNumber VARCHAR(32) REFERENCES CreditCards,
-    PRIMARY KEY(customerID, creditCardNumber)
+-- Absorbs PaidBy, Uses
+-- Partial Key + Strong entity primary key used to enforce Weak-Entity R/S
+-- To enforce TP constraint with Orders, use triggers
+-- Triggers: Enforce Only 1 of the 3 booleans is true
+CREATE TABLE Payments (
+    paymentID SERIAL UNIQUE,
+    orderID INTEGER UNIQUE REFERENCES Orders,
+    creditCardNumber VARCHAR(16) REFERENCES CreditCards(creditCardNumber),
+    useCash BOOLEAN,
+    useCreditCard BOOLEAN,
+    useRewardPoints BOOLEAN,
+    PRIMARY KEY(paymentID, orderID)
+);
+
+-- Combine Reviews and Posts
+CREATE TABLE Reviews(
+    reviewID SERIAL,
+    reviewImg VARCHAR(50), 
+    reviewMsg VARCHAR(256) NOT NULL,
+    customerID INTEGER NOT NULL REFERENCES Customers,
+    foodItemID INTEGER NOT NULL REFERENCES FoodItems,
+    PRIMARY KEY (reviewID),
+    UNIQUE(customerID, foodItemID)
+);
+
+CREATE TABLE Requests (
+    orderID INTEGER UNIQUE NOT NULL REFERENCES Orders(orderID),
+    customerID INTEGER REFERENCES Customers(customerID),
+    paymentID INTEGER UNIQUE NOT NULL REFERENCES Payments(paymentID)
 );
 
 -- combine Stores and Addresses
 CREATE TABLE Addresses (
-    address VARCHAR(100) PRIMARY KEY,
+    addressID SERIAL PRIMARY KEY,
+    address VARCHAR(100),
     addressTimeStamp TIMESTAMP NOT NULL,
+    postalCode INTEGER NOT NULL,
     customerID INTEGER NOT NULL REFERENCES Customers
-);
-
-CREATE TABLE SavedAddresses (
-    address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
-);
-
-CREATE TABLE RecentAddresses (
-    address VARCHAR(100) PRIMARY KEY REFERENCES Addresses(address) ON DELETE CASCADE
 );
 
 CREATE TABLE Rates (
@@ -719,6 +708,36 @@ CREATE TRIGGER full_time_riders_schedule_valid_rider_trigger
     FOR EACH ROW
     EXECUTE FUNCTION check_full_time_rider_valid_rider();
 
+-- Ensures that a customer can only review a food item he ordered
+CREATE OR REPLACE FUNCTION check_if_customer_ordered_fooditem() RETURNS TRIGGER
+    AS $$
+DECLARE
+    foodItemIDBeingReviewed INTEGER;
+BEGIN
+    SELECT F.foodItemID INTO foodItemIDBeingReviewed
+        FROM Customers C 
+        NATURAL JOIN Requests R
+        NATURAL JOIN Orders O
+        NATURAL JOIN Contains C2
+        NATURAL JOIN FoodItems F
+        WHERE F.foodItemID = NEW.foodItemID
+        AND C.customerID = NEW.customerID
+        AND O.status = true;
+
+    IF foodItemIDBeingReviewed IS NULL THEN
+        RAISE EXCEPTION 'CustomerID % did not order this food item % ', NEW.customerID, NEW.foodItemID;
+    END IF;
+    RETURN NEW;
+    RETURN NULL;
+END;
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS review_trigger ON Reviews CASCADE;
+CREATE TRIGGER review_trigger
+    BEFORE INSERT ON Reviews
+    FOR EACH ROW
+    EXECUTE FUNCTION check_if_customer_ordered_fooditem();
+
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
@@ -733,23 +752,21 @@ CREATE TRIGGER full_time_riders_schedule_valid_rider_trigger
 \copy FDSManagers(managerID, managerName) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FDSManagers.csv' DELIMITER ',' CSV HEADER;
 \copy Launches(managerID, promotionID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Launches.csv' DELIMITER ',' CSV HEADER;
 \copy DeliveryFee(deliveryID, deliveryFeeAmount) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/DeliveryFee.csv' DELIMITER ',' CSV HEADER;
-\copy Reviews(reviewID, reviewImg, reviewMsg) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
+\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, rewardPoints, dateCreated) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
 \copy Sets(managerID, deliveryID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Sets.csv' DELIMITER ',' CSV HEADER;
 \copy Riders(riderID,riderName,riderEmail,contactNum,isOccupied,isFullTime,baseSalary) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Riders.csv' DELIMITER ',' CSV HEADER;
 \copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
 \copy Applies(orderID, promotionID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
 \copy Contains(quantity, foodItemID, orderID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
-\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
-\copy CreditCards(creditCardNumber) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
+\copy CreditCards(customerID, creditCardNumber, creditCardName, expiryMonth, expiryYear) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
 \copy Requests(orderID, paymentID, customerID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
-\copy Owns(customerID, creditCardNumber) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Owns.csv'DELIMITER ',' CSV HEADER;
-\copy Addresses(address, addressTimeStamp, customerID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
-\copy SavedAddresses(address) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/SavedAddresses.csv' DELIMITER ',' CSV HEADER;
-\copy RecentAddresses(address) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/RecentAddresses.csv' DELIMITER ',' CSV HEADER;
+\copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
 \copy Rates(customerID, riderID, orderID, rating) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
 \copy Shifts(shiftID, shiftOneStart, shiftOneEnd, shiftTwoStart, shiftTwoEnd) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Shifts.csv' DELIMITER ',' CSV HEADER;
 \copy PartTimeSchedules(riderID, startTime, endTime, week, day) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PartTimeSchedules.csv' DELIMITER ',' CSV HEADER;
+-- Needs several tables to be createdgigggg before it
+\copy Reviews(reviewID, reviewImg, reviewMsg, customerID, foodItemID) from 'C:/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
 
 -- Insert DayRanges values
 INSERT INTO DayRanges VALUES (1,'{1,2,3,4,5}');
@@ -773,9 +790,8 @@ select setval('reviews_reviewid_seq',(select max(reviewID) from Reviews));
 select setval('riders_riderid_seq',(select max(riderid) from Riders));
 select setval('orders_orderid_seq',(select max(orderid) from Orders));
 select setval('payments_paymentid_seq',(select max(paymentid) from Payments));
-select setval('requests_orderid_seq',(select max(orderid) from Requests));
 select setval('customers_customerid_seq',(select max(customerid) from Customers));
-select setval('owns_customerid_seq',(select max(customerid) from Owns));
+select setval('addresses_addressid_seq',(select max(addressid) from Addresses));
 
 -- Additional Views
 create view TotalCompletedOrders(orderID, orderPlacedTimeStamp, foodItemID, foodItemName, price, quantity, restaurantID) as

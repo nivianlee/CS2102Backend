@@ -1,3 +1,12 @@
+/* Tests for reviews_trigger */
+-- Positive Test Case
+INSERT INTO Reviews(reviewImg, reviewMsg, customerID, foodItemID)
+VALUES('Image', 'Message', 15, 1);
+
+-- Negative Test Case: Will raise exception since Customer 1 did not order foodItem 2
+INSERT INTO Reviews(reviewImg, reviewMsg, customerID, foodItemID)
+VALUES('Image', 'Message', 1, 2);
+
 /* Tests for after_new_orders_trigger */
 -- Negative Test Case: Will raise exception since foodItem 21's maxNum is 1
 BEGIN;
