@@ -280,3 +280,14 @@ BEGIN;
     INSERT INTO FullTimeSchedules(riderID, shiftID, rangeID, month)
     VALUES (101, 1, 1, 4);
 COMMIT;
+
+/* Tests for order_more_than_min_amount */
+-- Negative Test Case: Will raise exception if orderCosts < minOrderCost
+BEGIN;
+    INSERT INTO Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID)
+    VALUES (314, FALSE, '5/4/2020 10:00', '5/8/2019 8:06', '5/8/2019 8:06', '5/8/2019 8:15', '5/8/2019 8:21', null, '864 Merchant Hill', 100, 11);
+
+    INSERT INTO Contains(quantity, foodItemID, orderID)
+    VALUES(1, 2, 314);
+COMMIT;
+

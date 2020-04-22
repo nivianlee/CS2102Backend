@@ -3,7 +3,7 @@ const pool = require('../../pool.js');
 const createRestaurantStaff = (request, response) => {
   const data = {
     name: request.body.restaurantstaffname,
-    restaurantid: request.body.restaurantid
+    restaurantid: request.body.restaurantid,
   };
   const values = [data.name, data.restaurantid];
   pool.query(
@@ -22,7 +22,7 @@ const updateRestaurantStaff = (request, response) => {
   const data = {
     name: request.body.restaurantstaffname,
     restaurantid: request.body.restaurantid,
-    restaurantstaffid: request.params.restaurantstaffid
+    restaurantstaffid: request.params.restaurantstaffid,
   };
   const values = [data.name, data.restaurantid, data.restaurantstaffid];
   pool.query(
@@ -56,7 +56,7 @@ const createFoodItem = (request, response) => {
     maxnumoforders: request.body.maxnumoforders,
     category: request.body.category,
     restaurantid: request.body.restaurantid,
-    restaurantstaffid: request.body.restaurantstaffid
+    restaurantstaffid: request.body.restaurantstaffid,
   };
   const values = [data.name, data.price, data.image, data.maxnumoforders, data.category, data.restaurantid];
 
@@ -80,7 +80,7 @@ const updateFoodItem = (request, response) => {
     image: request.body.image,
     maxnumoforders: request.body.maxnumoforders,
     category: request.body.category,
-    fooditemid: request.body.fooditemid
+    fooditemid: request.body.fooditemid,
   };
   const values = [data.name, data.price, data.image, data.maxnumoforders, data.category, data.fooditemid];
 
@@ -228,5 +228,5 @@ module.exports = {
   getMonthlyCompletedOrders,
   getMonthlyCompletedOrdersStatistics,
   getMonthlyFavouriteFoodItems,
-  getPromotionalCampaignsStatistics
+  getPromotionalCampaignsStatistics,
 };
