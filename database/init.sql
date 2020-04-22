@@ -57,7 +57,7 @@ CREATE TABLE FreeDelivery (
 CREATE TABLE Restaurants (
     restaurantID SERIAL PRIMARY KEY,
     restaurantName VARCHAR(50),
-    minOrderCost INTEGER,
+    minOrderCost NUMERIC(6, 2),
     address VARCHAR(100),
     postalCode INTEGER
 );
