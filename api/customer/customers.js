@@ -108,97 +108,6 @@ const verifyUser = (request, response) => {
   });
 };
 
-// // == VIEW CUSTOMER PROFILE ==
-// // update/remove customer details =s> updateCustomer
-// // retrieve customer details w/o pass
-// const getCustomerDetails = (request, response) => {
-//   const customerId = parseInt(request.params.customerId);
-
-//   pool.query(
-//     'SELECT customerName, customerEmail, customerPhone, customerAddress, customerPostalCode, rewardPoints, dateCreated FROM Customers WHERE customerID = $1',
-//     [customerId],
-//     (error, results) => {
-//       if (error) {
-//         throw error;
-//       }
-
-//       response.status(200).json(results.row);
-//     }
-//   );
-// };
-
-// // retrieve customer additional addresses
-// const getCustomerAddresses = (request, response) => {
-//   const customerId = parseInt(request.param.customerId);
-
-//   pool.query('SELECT * FROM Addresses WHERE customerID = $1', [customerId], (error, results) => {
-//     if (error) {
-//       throw error;
-//     }
-
-//     response.status(200).json(results.row);
-//   });
-// };
-
-// // retrieve customer saved addresses
-// const getCustomerAddresses = (request, response) => {
-//   const customerId = parseInt(request.param.customerId);
-
-//   pool.query(
-//     'SELECT * FROM Addresses INNER JOIN SavedAddresses ON (address) WHERE customerID = $1',
-//     [customerId],
-//     (error, results) => {
-//       if (error) {
-//         throw error;
-//       }
-
-//       response.status(200).json(results.row);
-//     }
-//   );
-// };
-
-// // retrieve customer recent addresses
-// const getCustomerAddresses = (request, response) => {
-//   const customerId = parseInt(request.param.customerId);
-
-//   pool.query(
-//     'SELECT * FROM Addresses INNER JOIN RecentAddresses ON (address) WHERE customerID = $1',
-//     [customerId],
-//     (error, results) => {
-//       if (error) {
-//         throw error;
-//       }
-
-//       response.status(200).json(results.row);
-//     }
-//   );
-// };
-
-// // retrieve customer credit cards
-// const getCustomerCreditCards = (request, response) => {
-//   const customerId = parseInt(request.param.customerId);
-
-//   pool.query('SELECT * FROM Owns WHERE customerID = $1', [customerId], (error, results) => {
-//     if (error) {
-//       throw error;
-//     }
-
-//     response.status(200).json(results.row);
-//   });
-// };
-
-// // VIEW REVIEWS/POSTS
-// const getReviewsByOrderId = (request, response) => {
-//   const orderId = parseInt(request.param.orderId);
-
-//   pool.query('SELECT * FROM Reviews WHERE OrderID = $1', [orderId], (error, results) => {
-//     if (error) {
-//       throw error;
-//     }
-
-//     response.status(200).json(results);
-//   });
-// };
 const getAddresses = (request, response) => {
   const customerid = parseInt(request.params.customerid);
 
@@ -213,36 +122,6 @@ const getAddresses = (request, response) => {
     }
   );
 };
-
-// const getRecentAddresses = (request, response) => {
-//   const customerid = parseInt(request.params.customerid);
-
-//   pool.query(
-//     'SELECT distinct addressID, address, postalCode, customerID FROM Addresses WHERE customerId = $1',
-//     [customerid],
-//     (error, results) => {
-//       if (error) {
-//         throw error;
-//       }
-//       response.status(200).json(results.rows);
-//     }
-//   );
-// };
-
-// const getSavedAddresses = (request, response) => {
-//   const customerid = parseInt(request.params.customerid);
-
-//   pool.query(
-//     'SELECT distinct addressID, address, postalCode, customerID FROM Addresses WHERE customerId = $1',
-//     [customerid],
-//     (error, results) => {
-//       if (error) {
-//         throw error;
-//       }
-//       response.status(200).json(results.rows);
-//     }
-//   );
-// };
 
 const postAddress = (request, response) => {
   const data = {
@@ -447,6 +326,95 @@ const deleteReview = (request, response) => {
   });
 };
 
+const getCustomerCreditCards = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+  pool.query('SELECT * FROM CreditCards WHERE customerid = $1', [customerid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
+const addCustomerCreditCard = (request, response) => {
+  const data = {
+    customerid: request.body.customerid,
+    creditcardnumber: request.body.creditcardnumber,
+    creditcardname: request.body.creditcardname,
+    expirymonth: request.body.expirymonth,
+    expiryyear: request.body.expiryyear,
+  };
+
+  const values = [data.customerid, data.creditcardnumber, data.creditcardname, data.expirymonth, data.expiryyear];
+
+  const query = `
+  INSERT INTO CreditCards (customerID, creditCardNumber, creditCardName, expiryMonth, expiryYear) 
+  VALUES ($1, $2, $3, $4, $5)
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).send({ message: 'Credit card has been added successfully!' });
+  });
+};
+
+const updateCustomerCreditCard = (request, response) => {
+  const data = {
+    customerid: request.body.customerid,
+    creditcardnumber: request.body.creditcardnumber,
+    creditcardname: request.body.creditcardname,
+    expirymonth: request.body.expirymonth,
+    expiryyear: request.body.expiryyear,
+    oldcreditcardnumber: request.body.oldcreditcardnumber,
+  };
+
+  const values = [
+    data.customerid,
+    data.creditcardnumber,
+    data.creditcardname,
+    data.expirymonth,
+    data.expiryyear,
+    data.oldcreditcardnumber,
+  ];
+
+  const query = `
+  UPDATE CreditCards
+  SET creditCardNumber = $2, creditCardName = $3, expiryMonth = $4, expiryYear = $5
+  WHERE customerID = $1 
+  AND creditCardNumber = $6
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).send({ message: 'Credit card has been updated successfully!' });
+  });
+};
+
+const deleteCustomerCreditCard = (request, response) => {
+  const data = {
+    customerid: request.body.customerid,
+    creditcardnumber: request.body.creditcardnumber,
+  };
+
+  const values = [data.customerid, data.creditcardnumber];
+  const query = `
+  DELETE FROM CreditCards 
+  WHERE customerID = $1
+  AND creditCardNumber = $2
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).send({ message: 'Credit card has been deleted successfully!' });
+  });
+};
+
 module.exports = {
   verifyUser,
   getCustomers,
@@ -455,8 +423,6 @@ module.exports = {
   updateCustomer,
   deleteCustomer,
   getAddresses,
-  // getRecentAddresses,
-  // getSavedAddresses,
   postAddress,
   updateAddress,
   deleteAddress,
@@ -468,4 +434,8 @@ module.exports = {
   postReview,
   updateReview,
   deleteReview,
+  getCustomerCreditCards,
+  addCustomerCreditCard,
+  updateCustomerCreditCard,
+  deleteCustomerCreditCard,
 };

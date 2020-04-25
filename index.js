@@ -33,23 +33,30 @@ app.get('/', (request, response) => {
 app.post('/customer/login', customers.verifyUser); // CFE done
 app.get('/customers', customers.getCustomers);
 app.get('/customers/:customerid', customers.getCustomerById);
+app.post('/customers', customers.createCustomer);
+app.put('/customers/customerid/:customerid', customers.updateCustomer);
+app.delete('/customers/customerid/:customerid', customers.deleteCustomer);
+
 app.get('/customers/:customerid/addresses', customers.getAddresses);
 app.post('/customers/:customerid/addresses', customers.postAddress);
 app.put('/customers/:customerid/addresses', customers.updateAddress);
 app.delete('/customers/:customerid/addresses/:addressid', customers.deleteAddress);
+
 app.get('/customers/currentorders/:customerid', customers.getCurrentOrders);
 app.get('/customers/pastorders/:customerid', customers.getPastOrders);
 app.get('/customers/:customerid/order/:orderid', customers.getAnOrderByCusId);
+
 app.get('/customers/reviews', customers.getAllReviews);
 app.get('/customers/reviews/:fooditemid', customers.getReviewsForFoodItem);
-app.post('/customers', customers.createCustomer);
+
 app.post('/customers/reviews', customers.postReview);
-app.put('/customers/customerid/:customerid', customers.updateCustomer);
 app.put('/customers/reviews', customers.updateReview);
-app.delete('/customers/customerid/:customerid', customers.deleteCustomer);
 app.delete('/customers/reviews', customers.deleteReview);
-// app.get('/customers/:customerid/recentaddresses', customers.getRecentAddresses);
-// app.get('/customers/:customerid/savedaddresses', customers.getSavedAddresses);
+
+app.get('/customers/creditcards/:customerid', customers.getCustomerCreditCards);
+app.post('/customers/creditcard/:customerid', customers.addCustomerCreditCard);
+app.put('/customers/creditcard/:customerid', customers.updateCustomerCreditCard);
+app.delete('/customers/creditcard/:customerid', customers.deleteCustomerCreditCard);
 
 // restaurant apis
 app.get('/restaurants', restaurants.getRestaurants); // CFE done

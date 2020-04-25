@@ -1,7 +1,7 @@
 restaurantID,restaurantName,minOrderCost,address,postalCode
 1,Crystal Jade Hong Kong Kitchen (Tampines Mall),9,"B1-11, 4 Tampines Central 5, B1-11 Tampines Mall, Tampines, Simei",529510
 2,Eighteen Chefs (East Point),8,"3 Simei Street 6, #01-12 Eastpoint Mall",528833
-3,Good Taste Mala Hotpot 好滋味麻辣香锅 (Pasir Ris),6,"01-02, 443 Pasir Ris Drive 6, Pasir Ris East",510443
+3,Good Taste Mala Hotpot (Pasir Ris),6,"01-02, 443 Pasir Ris Drive 6, Pasir Ris East",510443
 4,Nana Original Thai Food (Clementi),6,"18 Clementi Road, Clementi, Jurong East",129747
 5,Al Amaan Restaurant,6,"12 Clementi Road, Bukit Timah/Buona Vista",129742
 6,Poke Theory (Kent Ridge),8,"02-12, 1 Lower Kent Ridge Road, ONE @ Kent Ridge, NUH, Bukit Timah, Buona Vista",119082
@@ -17,5 +17,5 @@ restaurantID,restaurantName,minOrderCost,address,postalCode
 16,Bali Thai,10,"2 Jurong East Street 21, #01 - 21, Singapore",609601
 17,Fish & Co.,5,"Westgate, 3 Gateway Dr, #01-03",608532
 18,Siam Square Mookata,10,"134 Jurong Gateway Rd, Singapore",600134
-19,Brotzeit VivoCity,9,"1 Harbourfront Walk, #01-149, VivoCity",098585
-20,Penang Culture @Vivo City,10,"#B2-23E, Vivo City, 1 Harbourfront Walk, Singapore",098585
+19,Brotzeit VivoCity,9,"1 Harbourfront Walk, #01-149, VivoCity",98585
+20,Penang Culture @Vivo City,10,"#B2-23E, Vivo City, 1 Harbourfront Walk, Singapore",98585
