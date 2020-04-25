@@ -911,6 +911,3 @@ BEGIN
     INSERT INTO Addresses(address, addressTimeStamp ,postalCode, customerID) VALUES($7, $6, $8,customerId);
 END;
 $$ language plpgsql;
-
-
---add_customer_and_address('hello','hello@helloworld.com','123','74589563',0,'7/4/2019 11:27','Blk 198',485963)
