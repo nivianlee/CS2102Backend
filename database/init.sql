@@ -164,11 +164,6 @@ CREATE TABLE Customers (
     customerEmail VARCHAR(50) UNIQUE NOT NULL,
     customerPassword VARCHAR(50) NOT NULL,
     customerPhone VARCHAR(8) UNIQUE NOT NULL,
-<<<<<<< HEAD
-    -- customerAddress VARCHAR(50) NOT NULL,
-    -- customerPostalCode INTEGER NOT NULL,
-=======
->>>>>>> 61c0d95c2b579d1d2d5a9925e96e2c0cc622359d
     rewardPoints INTEGER NOT NULL DEFAULT 0,
     dateCreated DATE NOT NULL
 );
@@ -902,3 +897,17 @@ DROP TRIGGER IF EXISTS after_new_orders_trigger ON Orders CASCADE;
 CREATE TRIGGER after_new_orders_trigger 
     AFTER INSERT ON Orders
     FOR EACH ROW EXECUTE FUNCTION reset_food_availability();
+
+-- when user create an account, the system will auto add address with customer acc
+CREATE OR REPLACE FUNCTION add_customer_and_address(customerName text, customerEmail text, customerPassword text, customerPhone text, rewardPoints integer, dateCreated date, address text, postalCode integer)
+RETURNS VOID AS $$
+DECLARE 
+    customerId INTEGER;
+BEGIN
+    INSERT INTO Customers(customerName, customerEmail,customerPassword,customerPhone,rewardPoints,dateCreated) VALUES ($1, $2, $3, $4, $5, $6);
+    SELECT C.customerID into customerId
+    FROM Customers C
+    WHERE C.customerEmail = $2;
+    INSERT INTO Addresses(address, addressTimeStamp ,postalCode, customerID) VALUES($7, $6, $8,customerId);
+END;
+$$ language plpgsql;

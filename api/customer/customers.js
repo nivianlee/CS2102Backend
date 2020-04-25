@@ -32,21 +32,24 @@ const createCustomer = (request, response) => {
     rewardPoints: 0,
     dateCreated: new Date(),
   };
-  const values = [data.name, data.email, data.password, data.phone, data.rewardPoints, data.dateCreated];
-  const address = [data.address, data.postalCode];
+  const values = [
+    data.name,
+    data.email,
+    data.password,
+    data.phone,
+    data.rewardPoints,
+    data.dateCreated,
+    data.address,
+    data.postalCode,
+  ];
 
-  pool.query(
-    'INSERT INTO Customers (customerName, customerEmail,customerPassword,customerPhone,rewardPoints,dateCreated) VALUES ($1, $2, $3, $4, $5, $6)',
-    values,
-    (error, results) => {
-      if (error) {
-        response.status(401).send({ message: 'This email or phone number is already exist!' });
-        throw error;
-      }
-
-      response.status(201).send({ message: 'Customer has been added successfully!' });
+  pool.query('SELECT add_customer_and_address($1, $2, $3, $4, $5, $6, $7, $8)', values, (error, results) => {
+    if (error) {
+      response.status(401).send({ message: 'This email or phone number is already exist!' });
+      throw error;
     }
-  );
+    response.status(201).send({ message: 'Customer has been added successfully!' });
+  });
 };
 
 const updateCustomer = (request, response) => {
