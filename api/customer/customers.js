@@ -32,19 +32,11 @@ const createCustomer = (request, response) => {
     rewardPoints: 0,
     dateCreated: new Date(),
   };
-  const values = [
-    data.name,
-    data.email,
-    data.password,
-    data.phone,
-    data.address,
-    data.postalCode,
-    data.rewardPoints,
-    data.dateCreated,
-  ];
+  const values = [data.name, data.email, data.password, data.phone, data.rewardPoints, data.dateCreated];
+  const address = [data.address, data.postalCode];
 
   pool.query(
-    'INSERT INTO Customers (customerName, customerEmail,customerPassword,customerPhone,customerAddress,customerPostalCode,rewardPoints,dateCreated) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+    'INSERT INTO Customers (customerName, customerEmail,customerPassword,customerPhone,rewardPoints,dateCreated) VALUES ($1, $2, $3, $4, $5, $6)',
     values,
     (error, results) => {
       if (error) {
@@ -332,7 +324,7 @@ const getPastOrders = (request, response) => {
   const customerid = parseInt(request.params.customerid);
   const query = `
   SELECT *
-  FROM Requests R natural join Payments P natural join Orders O
+  FROM Requests R natural join Payments P natural join Orders O natural join Restaurants Res
   WHERE customerID = $1
   AND O.status = true
   ORDER BY orderPlacedTimeStamp desc
@@ -350,7 +342,7 @@ const getAnOrderByCusId = (request, response) => {
   const orderid = parseInt(request.params.orderid);
   const query = `
   SELECT *
-  FROM Requests R natural join Contains C
+  FROM Requests R natural join Contains C natural join FoodItems F
   WHERE customerID = $1
   AND orderID = $2
 `;
