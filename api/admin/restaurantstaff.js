@@ -1,5 +1,47 @@
 const pool = require('../../pool.js');
 
+const getRestaurantStaffs = (request, response) => {
+  const restaurantID = parseInt(request.params.restaurantid);
+  pool.query(
+    'SELECT * FROM RestaurantStaff WHERE restaurantid = $1 ORDER BY restaurantStaffID ASC',
+    [restaurantID],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      console.log(results.rows.length);
+      if (results.rows.length > 0) {
+        response.status(200).json(results.rows);
+      } else {
+        response.status(200).send({
+          message: `Restaurant with id ${restaurantID} does not have any staff`,
+        });
+      }
+    }
+  );
+};
+
+const getRestaurantStaffById = (request, response) => {
+  const restaurantID = parseInt(request.params.restaurantid);
+  const restaurantStaffID = parseInt(request.params.restaurantstaffid);
+  pool.query(
+    'SELECT * FROM RestaurantStaff WHERE restaurantid = $1 AND restaurantstaffid = $2',
+    [restaurantID, restaurantStaffID],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      if (results.rows.length === 1) {
+        response.status(200).json(results.rows);
+      } else {
+        response.status(200).send({
+          message: `Restaurant staff with id ${restaurantStaffID} does not belong to restaurant with id ${restaurantID}`,
+        });
+      }
+    }
+  );
+};
+
 const createRestaurantStaff = (request, response) => {
   const data = {
     name: request.body.restaurantstaffname,
@@ -84,8 +126,8 @@ const createFoodItem = (request, response) => {
     if (error) {
       throw error;
     }
-    if (results.rows[0].length === 1) {
-      response.status(200).send({ message: `Food item ${results.rows[0].fooditemname} has been added successfully!` });
+    if (results.rows.length === 1) {
+      response.status(200).send({ message: `Food item ${results.rows.fooditemname} has been added successfully!` });
     } else {
       response.status(200).send({
         message: `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`,
@@ -132,10 +174,8 @@ const updateFoodItem = (request, response) => {
     if (error) {
       throw error;
     }
-    if (results.rows[0].length === 1) {
-      response
-        .status(200)
-        .send({ message: `Food item ${results.rows[0].fooditemname} has been updated successfully!` });
+    if (results.rows.length === 1) {
+      response.status(200).send({ message: `Food item ${results.rows.fooditemname} has been updated successfully!` });
     } else {
       response.status(200).send({
         message: `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`,
@@ -167,7 +207,7 @@ const deleteFoodItem = (request, response) => {
       throw error;
     }
     if (results.rows.length === 1) {
-      response.status(201).send({ message: `Food item with id ${results.rows[0].fooditemid} has been deleted` });
+      response.status(201).send({ message: `Food item with id ${results.rows.fooditemid} has been deleted` });
     } else {
       response.status(200).send({
         message: `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`,
@@ -299,6 +339,8 @@ const getPromotionalCampaignsStatistics = (request, response) => {
 };
 
 module.exports = {
+  getRestaurantStaffs,
+  getRestaurantStaffById,
   createRestaurantStaff,
   updateRestaurantStaff,
   deleteRestaurantStaff,

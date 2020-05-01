@@ -82,6 +82,8 @@ app.post('/restaurants/:restaurantid', restaurants.updateRestaurant);
 app.delete('/restaurants/:restaurantid', restaurants.deleteRestaurant);
 
 // admin: restaurantStaff
+app.get('/restaurants/:restaurantid/restaurantstaff', restaurantstaff.getRestaurantStaffs);
+app.get('/restaurants/:restaurantid/restaurantstaff/:restaurantstaffid', restaurantstaff.getRestaurantStaffById);
 app.get('/restaurantstaff/orders/:restaurantstaffid', restaurantstaff.getAllCompletedOrders);
 app.get('/restaurantstaff/monthlyOrders/:year/:month/:restaurantstaffid', restaurantstaff.getMonthlyCompletedOrders);
 app.get(
