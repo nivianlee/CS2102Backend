@@ -758,7 +758,7 @@ CREATE TRIGGER review_trigger
 \copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
 \copy Applies(orderID, promotionID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
 \copy Contains(quantity, foodItemID, orderID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
-\copy CreditCards(creditCardNumber) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
+\copy CreditCards(customerID, creditCardNumber, creditCardName, expiryMonth, expiryYear) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
 \copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
 \copy Requests(orderID, paymentID, customerID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
 \copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
@@ -898,7 +898,7 @@ CREATE TRIGGER after_new_orders_trigger
     AFTER INSERT ON Orders
     FOR EACH ROW EXECUTE FUNCTION reset_food_availability();
 
-
+-- when user create an account, the system will auto add address with customer acc
 CREATE OR REPLACE FUNCTION add_customer_and_address(customerName text, customerEmail text, customerPassword text, customerPhone text, rewardPoints integer, dateCreated date, address text, postalCode integer)
 RETURNS VOID AS $$
 DECLARE 
