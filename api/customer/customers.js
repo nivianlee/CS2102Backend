@@ -339,6 +339,21 @@ const getCustomerCreditCards = (request, response) => {
   });
 };
 
+const getCustomerCreditCard = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+  const creditCardId = parseInt(request.params.creditcardid);
+  pool.query(
+    'SELECT * FROM CreditCards WHERE customerid = $1 AND creditCardNumber = $2',
+    [customerid, creditCardId],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).json(results.rows);
+    }
+  );
+};
+
 const addCustomerCreditCard = (request, response) => {
   const data = {
     customerid: request.body.customerid,
@@ -391,7 +406,7 @@ const updateCustomerCreditCard = (request, response) => {
 
   pool.query(query, values, (error, results) => {
     if (error) {
-      throw error;
+      response.status(201).send({ message: error });
     }
     response.status(200).send({ message: 'Credit card has been updated successfully!' });
   });
@@ -438,6 +453,7 @@ module.exports = {
   updateReview,
   deleteReview,
   getCustomerCreditCards,
+  getCustomerCreditCard,
   addCustomerCreditCard,
   updateCustomerCreditCard,
   deleteCustomerCreditCard,
