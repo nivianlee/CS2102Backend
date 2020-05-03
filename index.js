@@ -54,6 +54,7 @@ app.put('/customers/reviews', customers.updateReview);
 app.delete('/customers/reviews', customers.deleteReview);
 
 app.get('/customers/creditcards/:customerid', customers.getCustomerCreditCards);
+app.get('/customers/creditcard/:customerid/:creditcardid', customers.getCustomerCreditCard);
 app.post('/customers/creditcard/:customerid', customers.addCustomerCreditCard);
 app.put('/customers/creditcard/:customerid', customers.updateCustomerCreditCard);
 app.delete('/customers/creditcard/:customerid', customers.deleteCustomerCreditCard);
