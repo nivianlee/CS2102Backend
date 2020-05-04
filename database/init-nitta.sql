@@ -58,8 +58,10 @@ CREATE TABLE Restaurants (
     restaurantID SERIAL PRIMARY KEY,
     restaurantName VARCHAR(50),
     minOrderCost NUMERIC(6, 2),
+    contactNum INTEGER,
     address VARCHAR(100),
-    postalCode INTEGER
+    postalCode INTEGER,
+    image VARCHAR
 );
 
 -- Combine Cooks and FoodItems
@@ -68,7 +70,7 @@ CREATE TABLE FoodItems (
     foodItemName VARCHAR(50), 
     price NUMERIC(6, 2),
     availabilityStatus BOOLEAN DEFAULT true,
-    image VARCHAR(50),
+    image VARCHAR,
     maxNumOfOrders INTEGER,
     category VARCHAR(50),
     restaurantID INTEGER NOT NULL, -- enforces exactly 1
@@ -78,6 +80,7 @@ CREATE TABLE FoodItems (
 CREATE TABLE RestaurantStaff (
     restaurantStaffID SERIAL PRIMARY KEY,
     restaurantStaffName VARCHAR(50),
+    contactNum INTEGER UNIQUE NOT NULL,
     restaurantID INTEGER NOT NULL,
     FOREIGN KEY (restaurantID) REFERENCES Restaurants
 );
@@ -98,7 +101,8 @@ CREATE TABLE Offers (
 
 CREATE TABLE FDSManagers (
     managerID SERIAL PRIMARY KEY,
-    managerName VARCHAR(50)
+    managerName VARCHAR(50),
+    contactNum INTEGER UNIQUE NOT NULL
 );
 
 CREATE TABLE Launches (
@@ -194,7 +198,7 @@ CREATE TABLE Payments (
 -- Combine Reviews and Posts
 CREATE TABLE Reviews(
     reviewID SERIAL,
-    reviewImg VARCHAR(50), 
+    reviewImg VARCHAR, 
     reviewMsg VARCHAR(256) NOT NULL,
     customerID INTEGER NOT NULL REFERENCES Customers,
     foodItemID INTEGER NOT NULL REFERENCES FoodItems,
@@ -739,9 +743,9 @@ CREATE TRIGGER review_trigger
     EXECUTE FUNCTION check_if_customer_ordered_fooditem();
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
-\copy Restaurants(restaurantID, restaurantName, minOrderCost, address, postalCode) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
+\copy Restaurants(restaurantID, restaurantName, minOrderCost, contactNum, address, postalCode, image) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
-\copy RestaurantStaff(restaurantStaffID, restaurantStaffName, restaurantID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
+\copy RestaurantStaff(restaurantStaffID, restaurantStaffName, contactNum, restaurantID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
 \copy Manages(restaurantStaffID, foodItemID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
 \copy Promotions(promotionID, startTimeStamp, endTimeStamp) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
 \copy Offers(restaurantID, promotionID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Offers.csv' DELIMITER ',' CSV HEADER;
@@ -749,7 +753,7 @@ CREATE TRIGGER review_trigger
 \copy Percentage(promotionID, percentageAmount) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Percentage.csv' DELIMITER ',' CSV HEADER;
 \copy Amount(promotionID, absoluteAmount) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Amount.csv' DELIMITER ',' CSV HEADER;;
 \copy FreeDelivery(promotionID, deliveryAmount) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FreeDelivery.csv' DELIMITER ',' CSV HEADER;
-\copy FDSManagers(managerID, managerName) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FDSManagers.csv' DELIMITER ',' CSV HEADER;
+\copy FDSManagers(managerID, managerName, contactNum) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FDSManagers.csv' DELIMITER ',' CSV HEADER;
 \copy Launches(managerID, promotionID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Launches.csv' DELIMITER ',' CSV HEADER;
 \copy DeliveryFee(deliveryID, deliveryFeeAmount) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/DeliveryFee.csv' DELIMITER ',' CSV HEADER;
 \copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, rewardPoints, dateCreated) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
