@@ -31,16 +31,17 @@ app.get('/', (request, response) => {
 
 // customer apis
 app.post('/customer/login', customers.verifyUser); // CFE done
-app.get('/customers', customers.getCustomers); // CFE don't need
-app.get('/customers/:customerid', customers.getCustomerById); // CFE done
-app.post('/customers', customers.createCustomer); // CFE done
-app.put('/customers/customerid/:customerid', customers.updateCustomer);
-app.delete('/customers/customerid/:customerid', customers.deleteCustomer); // CFE don't need
 
-app.get('/customers/:customerid/addresses', customers.getAddresses); // CFE done
-app.post('/customers/:customerid/addresses', customers.postAddress); // CFE done
-app.put('/customers/:customerid/addresses', customers.updateAddress); // CFE done
-app.delete('/customers/:customerid/addresses/:addressid', customers.deleteAddress); // CFE done
+app.get('/customers', customers.getCustomers); // CFE don't need
+app.get('/customers/customer/:customerid', customers.getCustomerById); // CFE done
+app.post('/customers', customers.createCustomer); // CFE done
+app.put('/customers/customer/:customerid', customers.updateCustomer);
+app.delete('/customers/customer/:customerid', customers.deleteCustomer); // CFE don't need
+
+app.get('/customers/addresses/:customerid', customers.getAddresses);// CFE done
+app.post('/customers/addresses/:customerid', customers.postAddress); // CFE done
+app.put('/customers/addresses/:customerid', customers.updateAddress);// CFE done
+app.delete('/customers/addresses/:customerid/:addressid', customers.deleteAddress); // CFE done
 
 app.get('/customers/currentorders/:customerid', customers.getCurrentOrders);
 app.get('/customers/pastorders/:customerid', customers.getPastOrders);
@@ -49,9 +50,9 @@ app.get('/customers/:customerid/order/:orderid', customers.getAnOrderByCusId);
 app.get('/customers/reviews', customers.getAllReviews);
 app.get('/customers/reviews/:fooditemid', customers.getReviewsForFoodItem);
 
-app.post('/customers/reviews', customers.postReview);
-app.put('/customers/reviews', customers.updateReview);
-app.delete('/customers/reviews', customers.deleteReview);
+app.post('/customers/reviews/:customerid', customers.postReview);
+app.put('/customers/reviews/:customerid', customers.updateReview);
+app.delete('/customers/reviews/:customerid', customers.deleteReview);
 
 app.get('/customers/creditcards/:customerid', customers.getCustomerCreditCards); // CFE done
 app.get('/customers/creditcard/:customerid/:creditcardid', customers.getCustomerCreditCard); // CFE done
@@ -89,6 +90,11 @@ app.post('/restaurants/:restaurantid', restaurants.updateRestaurant);
 app.delete('/restaurants/:restaurantid', restaurants.deleteRestaurant);
 
 // admin: restaurantStaff
+<<<<<<< HEAD
+=======
+app.get('/restaurants/:restaurantid/restaurantstaff', restaurantstaff.getRestaurantStaffs);
+app.get('/restaurants/:restaurantid/restaurantstaff/:restaurantstaffid', restaurantstaff.getRestaurantStaffById);
+>>>>>>> b2279befd69da68029b888d7b3513d4ab0477aa1
 app.get('/restaurantstaff/orders/:restaurantstaffid', restaurantstaff.getAllCompletedOrders);
 app.get('/restaurantstaff/monthlyOrders/:year/:month/:restaurantstaffid', restaurantstaff.getMonthlyCompletedOrders);
 app.get(
@@ -101,9 +107,16 @@ app.get(
 );
 app.get('/restaurantstaff/promotionStatistics/:restaurantstaffid', restaurantstaff.getPromotionalCampaignsStatistics);
 app.post('/restaurantstaff', restaurantstaff.createRestaurantStaff);
+<<<<<<< HEAD
 app.post('/restaurantstaff/fooditems/:restaurantstaffid', restaurantstaff.createFoodItem);
 app.put('/restaurantstaff/:restauranttaffid', restaurantstaff.updateRestaurantStaff);
 app.put('/restaurantstaff/fooditems/:restaurantstaffid', restaurantstaff.updateFoodItem);
+=======
+app.put('/restaurantstaff/:restauranttaffid', restaurantstaff.updateRestaurantStaff);
+app.post('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.createFoodItem);
+app.put('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.updateFoodItem);
+app.delete('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.deleteFoodItem);
+>>>>>>> b2279befd69da68029b888d7b3513d4ab0477aa1
 app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaurantStaff);
 
 app.listen(port, () => {
