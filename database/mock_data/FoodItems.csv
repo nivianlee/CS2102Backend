@@ -25,8 +25,7 @@ foodItemID,foodItemName,price,availabilityStatus,image,maxNumOfOrders,category,r
 24,Chicken N Waffle,14.50,TRUE,3993517855,200,Western,15
 25,Ayam Penyet Set,15.00,TRUE,3993517855,200,Chinese,16
 26,Fish & Chips,13.90,TRUE,3993517855,200,Western,17
-27,Pho Sliced Beef with Tendon,TRUE,3993517855,200,Vietnamese,18
+27,Pho Sliced Beef with Tendon,10.50,TRUE,3993517855,200,Vietnamese,18
 28,Aglio Olio,11.20,TRUE,7119669820,200,Italian,19
 29,Carbonara,11.90,TRUE,8051605428,200,Italian,19
 30,Penang Fried Kway Teow,9.50,TRUE,4209744493,200,Halal,20
-
