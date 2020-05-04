@@ -898,7 +898,7 @@ CREATE TRIGGER after_new_orders_trigger
     AFTER INSERT ON Orders
     FOR EACH ROW EXECUTE FUNCTION reset_food_availability();
 
--- when user create an account, the system will auto add address with customer acc
+-- When user create an account, the system will auto add address with customer acc
 CREATE OR REPLACE FUNCTION add_customer_and_address(customerName text, customerEmail text, customerPassword text, customerPhone text, rewardPoints integer, dateCreated date, address text, postalCode integer)
 RETURNS VOID AS $$
 DECLARE 
@@ -911,3 +911,36 @@ BEGIN
     INSERT INTO Addresses(address, addressTimeStamp ,postalCode, customerID) VALUES($7, $6, $8,customerId);
 END;
 $$ language plpgsql;
+
+-- Each order must exceed minimum order cost of restaurant
+CREATE OR REPLACE FUNCTION order_more_than_min_amount() RETURNS TRIGGER
+    AS $$
+DECLARE
+    orderTotalCost NUMERIC(6, 2);
+    minOrderCost NUMERIC(6, 2);
+BEGIN
+  SELECT OC.totalCostOfOrder INTO orderTotalCost
+  FROM OrderCosts OC
+  WHERE OC.orderID = NEW.orderID;
+
+  SELECT R.minOrderCost INTO minOrderCost
+  FROM Contains C 
+    JOIN FoodItems FI using (foodItemID)
+    JOIN Restaurants R using (restaurantID)
+  WHERE C.orderID = NEW.orderID;
+
+  IF orderTotalCost < minOrderCost THEN
+    RAISE EXCEPTION 'Order total cost of % does not meet restaurant minimum order cost of %', 
+      orderTotalCost, minOrderCost;
+  END IF;
+  RETURN NEW;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS after_new_orders_min_amt_trigger ON Orders CASCADE;
+CREATE CONSTRAINT TRIGGER after_new_orders_min_amt_trigger 
+  AFTER INSERT ON Orders
+    DEFERRABLE INITIALLY DEFERRED
+    FOR EACH ROW 
+    EXECUTE FUNCTION order_more_than_min_amount();
