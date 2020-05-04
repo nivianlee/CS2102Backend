@@ -44,12 +44,13 @@ const getRestaurantStaffById = (request, response) => {
 
 const createRestaurantStaff = (request, response) => {
   const data = {
-    name: request.body.restaurantstaffname,
-    restaurantid: request.body.restaurantid,
+    restaurantStaffName: request.body.restaurantStaffName,
+    contactNum: request.body.contactNum,
+    restaurantid: request.body.restaurantID,
   };
-  const values = [data.name, data.restaurantid];
+  const values = [data.restaurantStaffName, data.contactNum, data.restaurantid];
   pool.query(
-    'INSERT INTO RestaurantStaff (restaurantStaffName, restaurantID) VALUES ($1, $2)',
+    'INSERT INTO RestaurantStaff (restaurantStaffName, contactNum, restaurantID) VALUES ($1, $2, $3)',
     values,
     (error, results) => {
       if (error) {
@@ -62,13 +63,14 @@ const createRestaurantStaff = (request, response) => {
 
 const updateRestaurantStaff = (request, response) => {
   const data = {
-    name: request.body.restaurantstaffname,
+    restaurantStaffName: request.body.restaurantstaffname,
+    contactNum: request.body.contactNum,
     restaurantid: request.body.restaurantid,
     restaurantstaffid: request.params.restaurantstaffid,
   };
-  const values = [data.name, data.restaurantid, data.restaurantstaffid];
+  const values = [data.restaurantStaffName, data.contactNum, data.restaurantid, data.restaurantstaffid];
   pool.query(
-    'UPDATE RestaurantStaff SET restaurantStaffName = $1, restaurantID = $2 WHERE restaurantStaffID = $3',
+    'UPDATE RestaurantStaff SET restaurantStaffName = $1, contactNum = $2, restaurantID = $3 WHERE restaurantStaffID = $4',
     values,
     (error, results) => {
       if (error) {
