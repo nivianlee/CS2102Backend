@@ -1,24 +1,32 @@
 foodItemID,foodItemName,price,availabilityStatus,image,maxNumOfOrders,category,restaurantID
 1,Fried Rice,15.35,TRUE,282990940,200,Chinese,1
-2,Fish and Chips,3.42,TRUE,4947294437,200,Western,2
-3,Wanton Mee,23.74,TRUE,5939947365,200,Chinese,3
-4,Ribeye Steak,7.71,TRUE,7459106677,200,Western,4
-5,Kampong Style Fried Rice,5.80,TRUE,904549556,200,Halal,5
-6,Fish noodles,10.57,TRUE,1636853709,200,Chinese,6
-7,Lor Mee,23.51,TRUE,7707902469,200,Chinese,7
-8,Egg Prata,27.35,TRUE,3993517855,200,Indian,8
-9,Pineapple Fried Rice,3.4,TRUE,2858295148,200,Thai,9
-10,Aglio Olio,12.18,TRUE,7119669820,200,Italian,10
-11,Carbonara,6.39,TRUE,8051605428,200,Italian,11
-12,Kaisen Don,8.03,TRUE,4183090251,200,Japanese,12
-13,Fish Burger,5.44,TRUE,693937234,200,Western,13
-14,U-Mian,16.28,TRUE,8873541780,200,Chinese,14
-15,Chicken Rice,5.24,TRUE,3408533434,200,Chinese,15
-16,Pad Thai,16.63,TRUE,7350904257,200,Thai,16
-17,Maggie Goreng,7.39,TRUE,444287722,200,Indian,17
-18,Nasi Briyani,28.46,TRUE,5459881426,200,Malay,18
-19,Sambal Fried Rice,23.54,TRUE,4209744493,200,Chinese,19
-20,Beef Hor Fan,4.61,TRUE,6951303759,200,Chinese,20
-21,Curry Rice,4.1,TRUE,6951303759,200,Chinese,1
-22,Chicken Masala,8.0,TRUE,69513033232,200,Halal,5
-23,Plain Naan,2.50,TRUE,69534033232,200,Halal,5
+2,Fish and Chips,7.50,TRUE,4947294437,200,Western,2
+3,Mala Soup,13.90,TRUE,5939947365,200,Chinese,3
+4,Pineapple Fried Rice,3.50,TRUE,2858295148,200,Thai,4
+5,Pad Thai,8.00,TRUE,7350904257,200,Thai,4
+6,Chicken Masala,8.0,TRUE,69513033232,200,Halal,5
+7,Plain Naan,2.50,TRUE,69534033232,200,Halal,5
+8,Kampong Style Fried Rice,5.80,TRUE,904549556,200,Halal,5
+9,O.G. Salmon,8.80,TRUE,904549556,200,Modern Food,6
+10,Mentaiko Madness,10.80,TRUE,904549556,200,Modern Food,6
+11,O.G. Tuna,6.80,TRUE,904549556,200,Modern Food,6
+12,Ribeye Steak,15.50,TRUE,7459106677,200,Western,7
+13,Saba Fish Set,6.30,TRUE,7459106677,200,Japanese,8
+14,Teriyaki Chicken Set,5.30,TRUE,7459106677,200,Japanese,8
+15,Kaisen Don,8.30,TRUE,4183090251,200,Japanese,8
+16,Margherita,14.00,TRUE,4183090251,200,Pizza,9
+17,Diavola,15.00,TRUE,4183090251,200,Pizza,9
+18,Signature Claypot Herbal Bak Kut Teh,6.10,TRUE,1636853709,200,Chinese,10
+19,Hong Kong Wanton Noodle,7.00,TRUE,7707902469,200,Chinese,11
+20,Fried Egg and Luncheon Meat Noodle,6.50,TRUE,7707902469,200,Chinese,11
+21,Egg Prata,2.00,TRUE,3993517855,200,Indian,12
+22,Chicken Burger,2.00,TRUE,3993517855,200,Indian,13
+23,3 Pcs Tender Meal,9.10,TRUE,3993517855,200,Fast Food,14
+24,Chicken N Waffle,14.50,TRUE,3993517855,200,Western,15
+25,Ayam Penyet Set,15.00,TRUE,3993517855,200,Chinese,16
+26,Fish & Chips,13.90,TRUE,3993517855,200,Western,17
+27,Pho Sliced Beef with Tendon,TRUE,3993517855,200,Vietnamese,18
+28,Aglio Olio,11.20,TRUE,7119669820,200,Italian,19
+29,Carbonara,11.90,TRUE,8051605428,200,Italian,19
+30,Penang Fried Kway Teow,9.50,TRUE,4209744493,200,Halal,20
+
