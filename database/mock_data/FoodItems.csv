@@ -3,7 +3,7 @@ foodItemID,foodItemName,price,availabilityStatus,image,maxNumOfOrders,category,r
 2,Fish and Chips,3.42,TRUE,4947294437,200,Western,2
 3,Wanton Mee,23.74,TRUE,5939947365,200,Chinese,3
 4,Ribeye Steak,7.71,TRUE,7459106677,200,Western,4
-5,Beef Pho,3.47,TRUE,904549556,200,Vietnamese,5
+5,Kampong Style Fried Rice,5.80,TRUE,904549556,200,Halal,5
 6,Fish noodles,10.57,TRUE,1636853709,200,Chinese,6
 7,Lor Mee,23.51,TRUE,7707902469,200,Chinese,7
 8,Egg Prata,27.35,TRUE,3993517855,200,Indian,8
@@ -19,4 +19,6 @@ foodItemID,foodItemName,price,availabilityStatus,image,maxNumOfOrders,category,r
 18,Nasi Briyani,28.46,TRUE,5459881426,200,Malay,18
 19,Sambal Fried Rice,23.54,TRUE,4209744493,200,Chinese,19
 20,Beef Hor Fan,4.61,TRUE,6951303759,200,Chinese,20
-21,Curry Rice,4.1,TRUE,6951303759,2,Chinese,1
+21,Curry Rice,4.1,TRUE,6951303759,200,Chinese,1
+22,Chicken Masala,8.0,TRUE,69513033232,200,Halal,5
+23,Plain Naan,2.50,TRUE,69534033232,200,Halal,5

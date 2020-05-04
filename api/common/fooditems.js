@@ -22,5 +22,5 @@ const getFoodItemsByRestaurantId = (request, response) => {
 
 module.exports = {
   getFoodItems,
-  getFoodItemsByRestaurantId
+  getFoodItemsByRestaurantId,
 };

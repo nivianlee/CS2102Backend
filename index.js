@@ -33,26 +33,34 @@ app.get('/', (request, response) => {
 
 // customer apis
 app.post('/customer/login', customers.verifyUser); // CFE done
-app.get('/customers', customers.getCustomers);
-app.get('/customers/customer/:customerid', customers.getCustomerById);
-app.get('/customers/addresses/:customerid', customers.getAddresses);
+
+app.get('/customers', customers.getCustomers); // CFE don't need
+app.get('/customers/customer/:customerid', customers.getCustomerById); // CFE done
+app.post('/customers', customers.createCustomer); // CFE done
+app.put('/customers/customer/:customerid', customers.updateCustomer);
+app.delete('/customers/customer/:customerid', customers.deleteCustomer); // CFE don't need
+
+app.get('/customers/addresses/:customerid', customers.getAddresses); // CFE done
+app.post('/customers/addresses/:customerid', customers.postAddress); // CFE done
+app.put('/customers/addresses/:customerid', customers.updateAddress); // CFE done
+app.delete('/customers/addresses/:customerid/:addressid', customers.deleteAddress); // CFE done
+
 app.get('/customers/currentorders/:customerid', customers.getCurrentOrders);
 app.get('/customers/pastorders/:customerid', customers.getPastOrders);
+app.get('/customers/:customerid/order/:orderid', customers.getAnOrderByCusId);
+
 app.get('/customers/reviews', customers.getAllReviews);
-app.get('/customers/creditcards/:customerid', customers.getCustomerCreditCards);
 app.get('/customers/reviews/:fooditemid', customers.getReviewsForFoodItem);
-app.post('/customers', customers.createCustomer);
+
 app.post('/customers/reviews/:customerid', customers.postReview);
-app.post('/customers/creditcard/:customerid', customers.addCustomerCreditCard);
-app.post('/customers/addresses/:customerid', customers.postAddress);
-app.put('/customers/customer/:customerid', customers.updateCustomer);
 app.put('/customers/reviews/:customerid', customers.updateReview);
-app.put('/customers/creditcard/:customerid', customers.updateCustomerCreditCard);
-app.put('/customers/addresses/:customerid', customers.updateAddress);
-app.delete('/customers/customer/:customerid', customers.deleteCustomer);
 app.delete('/customers/reviews/:customerid', customers.deleteReview);
-app.delete('/customers/creditcard/:customerid', customers.deleteCustomerCreditCard);
-app.delete('/customers/addresses/:customerid/:addressid', customers.deleteAddress);
+
+app.get('/customers/creditcards/:customerid', customers.getCustomerCreditCards); // CFE done
+app.get('/customers/creditcard/:customerid/:creditcardid', customers.getCustomerCreditCard); // CFE done
+app.post('/customers/creditcard/:customerid', customers.addCustomerCreditCard); // CFE done
+app.put('/customers/creditcard/:customerid', customers.updateCustomerCreditCard); // CFE done
+app.delete('/customers/creditcard/:customerid', customers.deleteCustomerCreditCard); // CFE done
 
 // restaurant apis
 app.get('/restaurants', restaurants.getRestaurants); // CFE done
