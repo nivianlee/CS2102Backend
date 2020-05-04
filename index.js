@@ -31,16 +31,16 @@ app.get('/', (request, response) => {
 
 // customer apis
 app.post('/customer/login', customers.verifyUser); // CFE done
-app.get('/customers', customers.getCustomers);
-app.get('/customers/:customerid', customers.getCustomerById);
-app.post('/customers', customers.createCustomer);
+app.get('/customers', customers.getCustomers); // CFE don't need
+app.get('/customers/:customerid', customers.getCustomerById); // CFE done
+app.post('/customers', customers.createCustomer); // CFE done
 app.put('/customers/customerid/:customerid', customers.updateCustomer);
-app.delete('/customers/customerid/:customerid', customers.deleteCustomer);
+app.delete('/customers/customerid/:customerid', customers.deleteCustomer); // CFE don't need
 
-app.get('/customers/:customerid/addresses', customers.getAddresses);
-app.post('/customers/:customerid/addresses', customers.postAddress);
-app.put('/customers/:customerid/addresses', customers.updateAddress);
-app.delete('/customers/:customerid/addresses/:addressid', customers.deleteAddress);
+app.get('/customers/:customerid/addresses', customers.getAddresses); // CFE done
+app.post('/customers/:customerid/addresses', customers.postAddress); // CFE done
+app.put('/customers/:customerid/addresses', customers.updateAddress); // CFE done
+app.delete('/customers/:customerid/addresses/:addressid', customers.deleteAddress); // CFE done
 
 app.get('/customers/currentorders/:customerid', customers.getCurrentOrders);
 app.get('/customers/pastorders/:customerid', customers.getPastOrders);
@@ -53,11 +53,11 @@ app.post('/customers/reviews', customers.postReview);
 app.put('/customers/reviews', customers.updateReview);
 app.delete('/customers/reviews', customers.deleteReview);
 
-app.get('/customers/creditcards/:customerid', customers.getCustomerCreditCards);
-app.get('/customers/creditcard/:customerid/:creditcardid', customers.getCustomerCreditCard);
-app.post('/customers/creditcard/:customerid', customers.addCustomerCreditCard);
-app.put('/customers/creditcard/:customerid', customers.updateCustomerCreditCard);
-app.delete('/customers/creditcard/:customerid', customers.deleteCustomerCreditCard);
+app.get('/customers/creditcards/:customerid', customers.getCustomerCreditCards); // CFE done
+app.get('/customers/creditcard/:customerid/:creditcardid', customers.getCustomerCreditCard); // CFE done
+app.post('/customers/creditcard/:customerid', customers.addCustomerCreditCard); // CFE done
+app.put('/customers/creditcard/:customerid', customers.updateCustomerCreditCard); // CFE done
+app.delete('/customers/creditcard/:customerid', customers.deleteCustomerCreditCard); // CFE done
 
 // restaurant apis
 app.get('/restaurants', restaurants.getRestaurants); // CFE done
