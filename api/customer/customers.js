@@ -206,7 +206,7 @@ const getPastOrders = (request, response) => {
   const customerid = parseInt(request.params.customerid);
   const query = `
   SELECT *
-  FROM Requests R natural join Payments P natural join Orders O natural join Restaurants Res
+  FROM Requests R natural join Payments P natural join Orders O
   WHERE customerID = $1
   AND O.status = true
   ORDER BY orderPlacedTimeStamp desc
@@ -219,7 +219,25 @@ const getPastOrders = (request, response) => {
   });
 };
 
-const getAnOrderByCusId = (request, response) => {
+const getPastOrdersWithRes = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+  const query = `
+  SELECT distinct O.orderID, Res.restaurantname, Res.contactnum, O.deliveryaddress, O.riderdeliverordertimestamp, O.orderPlacedTimeStamp, sum(quantity*price) as TotalCost
+  FROM Requests R natural join Orders O natural join Contains C natural join FoodItems F inner join Restaurants Res on (Res.restaurantID = F.restaurantID)
+  WHERE customerID = $1
+  AND O.status = true
+  GROUP BY O.orderID, Res.restaurantname, Res.contactnum, O.deliveryaddress, O.riderdeliverordertimestamp
+  ORDER BY O.orderPlacedTimeStamp desc
+`;
+  pool.query(query, [customerid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
+const getAnOrderByCusIdNOrderId = (request, response) => {
   const customerid = parseInt(request.params.customerid);
   const orderid = parseInt(request.params.orderid);
   const query = `
@@ -446,7 +464,8 @@ module.exports = {
   deleteAddress,
   getCurrentOrders,
   getPastOrders,
-  getAnOrderByCusId,
+  getPastOrdersWithRes,
+  getAnOrderByCusIdNOrderId,
   getAllReviews,
   getReviewsForFoodItem,
   postReview,
