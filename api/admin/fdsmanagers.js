@@ -20,14 +20,22 @@ const getFDSManagersById = (request, response) => {
   });
 };
 
-const createFDSManagers = (request, response) => {
-  const managername = request.body.managername;
-  pool.query('INSERT INTO FDSManagers (managername) VALUES ($1) RETURNING *', [managername], (error, results) => {
-    if (error) {
-      throw error;
+const createFDSManager = (request, response) => {
+  const data = {
+    managerName: request.body.managerName,
+    contactNum: request.body.contactNum,
+  };
+  const values = [data.managerName, data.contactNum];
+  pool.query(
+    'INSERT INTO FDSManagers (managerName, contactNum) VALUES ($1, $2) RETURNING *',
+    values,
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).json(results.rows);
     }
-    response.status(201).send(`Manager added with manager name: ${results.rows[0].managername}`);
-  });
+  );
 };
 
 const updateFDSManagers = (request, response) => {
@@ -61,7 +69,7 @@ const getFDSManagerSummaryOne = (request, response) => {
   const query = `
         SELECT month, year, numCustCreated, totalOrders, totalOrdersSum
         FROM CustPerMonth JOIN TotalCostPerMonth USING (month, year);
-    `
+    `;
 
   pool.query(query, (error, results) => {
     if (error) {
@@ -69,7 +77,7 @@ const getFDSManagerSummaryOne = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 const getFDSManagerSummaryTwo = (request, response) => {
   // const month = parseInt(request.params.month);
@@ -87,8 +95,8 @@ const getFDSManagerSummaryTwo = (request, response) => {
                     JOIN Requests USING (orderID) 
                     JOIN OrderCosts USING (orderID)
                GROUP BY 1,2,3
-               ORDER BY 1,2,3`
-  }
+               ORDER BY 1,2,3`,
+  };
 
   pool.query(query, (error, results) => {
     if (error) {
@@ -96,7 +104,7 @@ const getFDSManagerSummaryTwo = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 const getFDSManagerSummaryThree = (request, response) => {
   const query = `
@@ -106,7 +114,7 @@ const getFDSManagerSummaryThree = (request, response) => {
         FROM Orders O
         GROUP BY 1,2
         ORDER BY 1,2;
-    `
+    `;
 
   pool.query(query, (error, results) => {
     if (error) {
@@ -114,7 +122,7 @@ const getFDSManagerSummaryThree = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 const getFDSManagerSummaryFour = (request, response) => {
   const query = `
@@ -141,7 +149,7 @@ const getFDSManagerSummaryFour = (request, response) => {
         AVG(rating) as averageRating
         FROM OrdersByMonth_Riders O join Riders using (riderID) left join Rates using (riderID)
         GROUP BY Month, Year, RiderID, totalSalaryEarned;
-    `
+    `;
 
   pool.query(query, (error, results) => {
     if (error) {
@@ -149,16 +157,16 @@ const getFDSManagerSummaryFour = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 module.exports = {
   getFDSManagers,
   getFDSManagersById,
-  createFDSManagers,
+  createFDSManager,
   updateFDSManagers,
   deleteFDSManagers,
   getFDSManagerSummaryOne,
   getFDSManagerSummaryTwo,
   getFDSManagerSummaryThree,
-  getFDSManagerSummaryFour
+  getFDSManagerSummaryFour,
 };
