@@ -94,13 +94,13 @@ const deleteRestaurantStaff = (request, response) => {
 
 const createFoodItem = (request, response) => {
   const data = {
-    fooditemname: request.body.fooditemname,
+    fooditemname: request.body.foodItemName,
     price: request.body.price,
-    availabilitystatus: request.body.availabilitystatus,
+    availabilitystatus: request.body.availabilityStatus,
     image: request.body.image,
-    maxnumoforders: request.body.maxnumoforders,
+    maxnumoforders: request.body.maxNumOfOrders,
     category: request.body.category,
-    restaurantid: request.body.restaurantid,
+    restaurantid: request.body.restaurantID,
     restaurantstaffid: parseInt(request.params.restaurantstaffid),
   };
 
@@ -129,26 +129,28 @@ const createFoodItem = (request, response) => {
       throw error;
     }
     if (results.rows.length === 1) {
-      response.status(200).send({ message: `Food item ${results.rows.fooditemname} has been added successfully!` });
+      response.status(201).send(`Food item ${results.rows.fooditemname} has been added successfully!`);
     } else {
-      response.status(200).send({
-        message: `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`,
-      });
+      response
+        .status(201)
+        .send(
+          `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`
+        );
     }
   });
 };
 
 const updateFoodItem = (request, response) => {
   const data = {
-    fooditemname: request.body.fooditemname,
+    fooditemname: request.body.foodItemName,
     price: request.body.price,
-    availabilitystatus: request.body.availabilitystatus,
+    availabilitystatus: request.body.availabilityStatus,
     image: request.body.image,
-    maxnumoforders: request.body.maxnumoforders,
+    maxnumoforders: request.body.maxNumOfOrders,
     category: request.body.category,
-    restaurantid: request.body.restaurantid,
+    restaurantid: request.body.restaurantID,
     restaurantstaffid: parseInt(request.params.restaurantstaffid),
-    fooditemid: request.body.fooditemid,
+    fooditemid: request.body.foodItemID,
   };
 
   const values = [
@@ -177,20 +179,22 @@ const updateFoodItem = (request, response) => {
       throw error;
     }
     if (results.rows.length === 1) {
-      response.status(200).send({ message: `Food item ${results.rows.fooditemname} has been updated successfully!` });
+      response.status(201).send(`Food item has been updated successfully!`);
     } else {
-      response.status(200).send({
-        message: `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`,
-      });
+      response
+        .status(201)
+        .send(
+          `Restaurant staff with id ${data.restaurantstaffid} does not belong to restaurant with id ${data.restaurantid}`
+        );
     }
   });
 };
 
 const deleteFoodItem = (request, response) => {
   const data = {
-    restaurantid: request.body.restaurantid,
+    restaurantid: request.body.restaurantID,
     restaurantstaffid: parseInt(request.params.restaurantstaffid),
-    fooditemid: request.body.fooditemid,
+    fooditemid: request.body.foodItemID,
   };
 
   const values = [data.restaurantid, data.restaurantstaffid, data.fooditemid];
