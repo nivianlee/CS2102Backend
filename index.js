@@ -115,6 +115,7 @@ app.get('/restaurantstaff/promotionStatistics/:restaurantstaffid', restaurantsta
 app.post('/restaurantstaff', restaurantstaff.createRestaurantStaff);
 app.put('/restaurantstaff/:restaurantstaffid', restaurantstaff.updateRestaurantStaff);
 app.post('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.createFoodItem);
+app.post('/restaurantstaff/:restaurantstaffid/promotion', restaurantstaff.postPromotion);
 app.put('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.updateFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.deleteFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaurantStaff);
