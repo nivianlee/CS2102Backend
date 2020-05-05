@@ -19,7 +19,7 @@ foodItemID,foodItemName,price,availabilityStatus,image,maxNumOfOrders,category,r
 18,Signature Claypot Herbal Bak Kut Teh,6.10,TRUE,1636853709,200,Chinese,10
 19,Hong Kong Wanton Noodle,7.00,TRUE,7707902469,200,Chinese,11
 20,Fried Egg and Luncheon Meat Noodle,6.50,TRUE,7707902469,200,Chinese,11
-21,Egg Prata,2.00,TRUE,3993517855,200,Indian,12
+21,Egg Prata,8.00,TRUE,3993517855,200,Indian,12
 22,Chicken Burger,2.00,TRUE,3993517855,200,Indian,13
 23,3 Pcs Tender Meal,9.10,TRUE,3993517855,200,Fast Food,14
 24,Chicken N Waffle,14.50,TRUE,3993517855,200,Western,15
