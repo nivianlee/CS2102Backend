@@ -148,9 +148,18 @@ const getFDSManagerSummaryFour = (request, response) => {
         )
         
         SELECT  riderid, month, year, 
-                COUNT(*) AS totalNumberOrdersDelivered, 
+                COUNT(O.orderID) AS totalNumberOrdersDelivered, 
                 COALESCE(hoursWorked, 0) AS totalHoursWorked,
-                baseSalary AS totalSalaryEarned, 
+                (SELECT COUNT(orderID)*5 +  
+                       (CASE 
+                          WHEN COUNT(orderID) > 5 THEN 100 
+                          WHEN COUNT(orderID) > 10 THEN 300
+                          ELSE 0
+                        END) 
+                 FROM OrdersByMonth_Riders
+                 WHERE riderID = O.riderID
+                 AND month = O.month
+                 AND year = O.year) + baseSalary AS totalSalaryEarned, 
                 AVG(
                     TRUNC(
                       EXTRACT(
