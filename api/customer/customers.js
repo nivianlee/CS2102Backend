@@ -222,11 +222,11 @@ const getPastOrders = (request, response) => {
 const getPastOrdersWithRes = (request, response) => {
   const customerid = parseInt(request.params.customerid);
   const query = `
-  SELECT distinct O.orderID, Res.restaurantname, Res.contactnum, O.deliveryaddress, O.riderdeliverordertimestamp, O.orderPlacedTimeStamp, sum(quantity*price) as TotalCost
+  SELECT distinct O.orderID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, O.orderPlacedTimeStamp, sum(quantity*price) as TotalCost
   FROM Requests R natural join Orders O natural join Contains C natural join FoodItems F inner join Restaurants Res on (Res.restaurantID = F.restaurantID)
   WHERE customerID = $1
   AND O.status = true
-  GROUP BY O.orderID, Res.restaurantname, Res.contactnum, O.deliveryaddress, O.riderdeliverordertimestamp
+  GROUP BY O.orderID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp
   ORDER BY O.orderPlacedTimeStamp desc
 `;
   pool.query(query, [customerid], (error, results) => {
