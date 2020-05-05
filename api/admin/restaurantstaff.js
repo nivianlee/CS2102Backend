@@ -63,12 +63,12 @@ const createRestaurantStaff = (request, response) => {
 
 const updateRestaurantStaff = (request, response) => {
   const data = {
-    restaurantStaffName: request.body.restaurantstaffname,
+    restaurantStaffName: request.body.restaurantStaffName,
     contactNum: request.body.contactNum,
-    restaurantid: request.body.restaurantid,
-    restaurantstaffid: request.params.restaurantstaffid,
+    restaurantID: request.body.restaurantID,
+    restaurantStaffID: parseInt(request.params.restaurantStaffID),
   };
-  const values = [data.restaurantStaffName, data.contactNum, data.restaurantid, data.restaurantstaffid];
+  const values = [data.restaurantStaffName, data.contactNum, data.restaurantID, data.restaurantStaffID];
   pool.query(
     'UPDATE RestaurantStaff SET restaurantStaffName = $1, contactNum = $2, restaurantID = $3 WHERE restaurantStaffID = $4',
     values,
@@ -82,9 +82,9 @@ const updateRestaurantStaff = (request, response) => {
 };
 
 const deleteRestaurantStaff = (request, response) => {
-  const restaurantstaffid = parseInt(request.params.restaurantstaffid);
+  const restaurantStaffID = parseInt(request.params.restaurantstaffid);
 
-  pool.query('DELETE FROM RestaurantStaff WHERE restaurantStaffID = $1', [restaurantstaffid], (error, results) => {
+  pool.query('DELETE FROM RestaurantStaff WHERE restaurantStaffID = $1', [restaurantStaffID], (error, results) => {
     if (error) {
       throw error;
     }
