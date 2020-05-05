@@ -47,7 +47,8 @@ app.delete('/customers/addresses/:customerid/:addressid', customers.deleteAddres
 
 app.get('/customers/currentorders/:customerid', customers.getCurrentOrders);
 app.get('/customers/pastorders/:customerid', customers.getPastOrders);
-app.get('/customers/:customerid/order/:orderid', customers.getAnOrderByCusId);
+app.get('/customers/:customerid/order/:orderid', customers.getAnOrderByCusIdNOrderId);
+app.get('/customers/:customerid/orders', customers.getPastOrdersWithRes);
 
 app.get('/customers/reviews', customers.getAllReviews);
 app.get('/customers/reviews/:fooditemid', customers.getReviewsForFoodItem);
