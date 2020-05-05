@@ -9,7 +9,7 @@ const getFDSManagers = (request, response) => {
   });
 };
 
-const getFDSManagersById = (request, response) => {
+const getFDSManagerById = (request, response) => {
   const managerid = parseInt(request.params.managerid);
 
   pool.query('SELECT * FROM FDSManagers WHERE managerid = $1', [managerid], (error, results) => {
@@ -38,23 +38,24 @@ const createFDSManager = (request, response) => {
   );
 };
 
-const updateFDSManagers = (request, response) => {
+const updateFDSManager = (request, response) => {
   const managerid = parseInt(request.params.managerid);
-  const managername = request.body.managername;
+  const managerName = request.body.managerName;
+  const contactNum = request.body.contactNum;
 
   pool.query(
     'UPDATE FDSManagers SET managername = $1 WHERE managerid = $2 RETURNING *',
-    [managername, managerid],
+    [managerName, managerid],
     (error, results) => {
       if (error) {
         throw error;
       }
-      response.status(201).send(`Manager has been updated with manager name: ${results.rows[0].managername}`);
+      response.status(201).send(`Manager has been updated with manager id: ${managerid}`);
     }
   );
 };
 
-const deleteFDSManagers = (request, response) => {
+const deleteFDSManager = (request, response) => {
   const managerid = parseInt(request.params.managerid);
 
   pool.query('DELETE FROM FDSManagers WHERE managerid = $1 RETURNING *', [managerid], (error, results) => {
@@ -161,10 +162,10 @@ const getFDSManagerSummaryFour = (request, response) => {
 
 module.exports = {
   getFDSManagers,
-  getFDSManagersById,
+  getFDSManagerById,
   createFDSManager,
-  updateFDSManagers,
-  deleteFDSManagers,
+  updateFDSManager,
+  deleteFDSManager,
   getFDSManagerSummaryOne,
   getFDSManagerSummaryTwo,
   getFDSManagerSummaryThree,
