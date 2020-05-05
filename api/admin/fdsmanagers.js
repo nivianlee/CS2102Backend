@@ -9,7 +9,7 @@ const getFDSManagers = (request, response) => {
   });
 };
 
-const getFDSManagersById = (request, response) => {
+const getFDSManagerById = (request, response) => {
   const managerid = parseInt(request.params.managerid);
 
   pool.query('SELECT * FROM FDSManagers WHERE managerid = $1', [managerid], (error, results) => {
@@ -20,33 +20,42 @@ const getFDSManagersById = (request, response) => {
   });
 };
 
-const createFDSManagers = (request, response) => {
-  const managername = request.body.managername;
-  pool.query('INSERT INTO FDSManagers (managername) VALUES ($1) RETURNING *', [managername], (error, results) => {
-    if (error) {
-      throw error;
-    }
-    response.status(201).send(`Manager added with manager name: ${results.rows[0].managername}`);
-  });
-};
-
-const updateFDSManagers = (request, response) => {
-  const managerid = parseInt(request.params.managerid);
-  const managername = request.body.managername;
-
+const createFDSManager = (request, response) => {
+  const data = {
+    managerName: request.body.managerName,
+    contactNum: request.body.contactNum,
+  };
+  const values = [data.managerName, data.contactNum];
   pool.query(
-    'UPDATE FDSManagers SET managername = $1 WHERE managerid = $2 RETURNING *',
-    [managername, managerid],
+    'INSERT INTO FDSManagers (managerName, contactNum) VALUES ($1, $2) RETURNING *',
+    values,
     (error, results) => {
       if (error) {
         throw error;
       }
-      response.status(201).send(`Manager has been updated with manager name: ${results.rows[0].managername}`);
+      response.status(200).json(results.rows);
     }
   );
 };
 
-const deleteFDSManagers = (request, response) => {
+const updateFDSManager = (request, response) => {
+  const managerid = parseInt(request.params.managerid);
+  const managerName = request.body.managerName;
+  const contactNum = request.body.contactNum;
+
+  pool.query(
+    'UPDATE FDSManagers SET managername = $1 WHERE managerid = $2 RETURNING *',
+    [managerName, managerid],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(201).send(`Manager has been updated with manager id: ${managerid}`);
+    }
+  );
+};
+
+const deleteFDSManager = (request, response) => {
   const managerid = parseInt(request.params.managerid);
 
   pool.query('DELETE FROM FDSManagers WHERE managerid = $1 RETURNING *', [managerid], (error, results) => {
@@ -61,7 +70,7 @@ const getFDSManagerSummaryOne = (request, response) => {
   const query = `
         SELECT month, year, numCustCreated, totalOrders, totalOrdersSum
         FROM CustPerMonth JOIN TotalCostPerMonth USING (month, year);
-    `
+    `;
 
   pool.query(query, (error, results) => {
     if (error) {
@@ -69,7 +78,7 @@ const getFDSManagerSummaryOne = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 const getFDSManagerSummaryTwo = (request, response) => {
   // const month = parseInt(request.params.month);
@@ -96,7 +105,7 @@ const getFDSManagerSummaryTwo = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 const getFDSManagerSummaryThree = (request, response) => {
   const query = `
@@ -106,7 +115,7 @@ const getFDSManagerSummaryThree = (request, response) => {
         FROM Orders O
         GROUP BY 1,2
         ORDER BY 1,2;
-    `
+    `;
 
   pool.query(query, (error, results) => {
     if (error) {
@@ -114,7 +123,7 @@ const getFDSManagerSummaryThree = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 const getFDSManagerSummaryFour = (request, response) => {
   const query = `
@@ -184,16 +193,16 @@ const getFDSManagerSummaryFour = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 module.exports = {
   getFDSManagers,
-  getFDSManagersById,
-  createFDSManagers,
-  updateFDSManagers,
-  deleteFDSManagers,
+  getFDSManagerById,
+  createFDSManager,
+  updateFDSManager,
+  deleteFDSManager,
   getFDSManagerSummaryOne,
   getFDSManagerSummaryTwo,
   getFDSManagerSummaryThree,
-  getFDSManagerSummaryFour
+  getFDSManagerSummaryFour,
 };

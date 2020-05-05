@@ -1,4 +1,5 @@
-managerID,managerName
-1,Tom
-2,Jerry
-3,Dick
+managerID,managerName,contactNum
+1,Tom,95816721
+2,Jerry,91034351
+3,Dick,85398664
+4,Yun Lin,90601456
