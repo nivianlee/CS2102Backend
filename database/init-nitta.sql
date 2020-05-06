@@ -32,7 +32,7 @@ CREATE TABLE Promotions (
     promotionID INTEGER PRIMARY KEY,
     startTimeStamp TIMESTAMP, 
     endTimeStamp TIMESTAMP,
-    promoDescription VARCHAR(50)
+    promoDescription VARCHAR(100)
 );
 
 CREATE TABLE TargettedPromoCode (
