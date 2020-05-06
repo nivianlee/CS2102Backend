@@ -379,7 +379,6 @@ const postPromotion = (request, response) => {
     FROM RestaurantStaff
     WHERE restaurantStaffID = $1
   `;
-
   let specificPromoQuery = '';
   let updateQuery = '';
   if (promotiontype == 'TargettedPromoCode') {
