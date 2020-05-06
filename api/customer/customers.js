@@ -459,6 +459,8 @@ const deleteCustomerCreditCard = (request, response) => {
 };
 
 const postOrder = (request, response) => {
+  // Adding of Address & Credit cards are handled on FE
+
   const data = {
     customerid: request.body.customerid,
     address: request.body.deliveryaddress,
@@ -466,6 +468,7 @@ const postOrder = (request, response) => {
     fooditems: request.body.fooditems,
     specialrequest: request.body.specialrequest,
     userewardpoints: request.body.userewardpoints,
+    rewardpoints: request.body.rewardpoints,
     usecash: request.body.usecash,
     usecreditcard: request.body.usecreditcard,
     creditcardnum: request.body.creditcardnumber,
@@ -499,7 +502,7 @@ const postOrder = (request, response) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-
+      // Randomly select rider who is free
       const getRiderId = `SELECT riderID FROM Riders WHERE isOccupied = true LIMIT 1`;
       const riderid = await client.query(getRiderId);
 
@@ -511,11 +514,12 @@ const postOrder = (request, response) => {
         riderid.rows[0].riderid,
         deliveryid,
       ];
-
+      // Create Order & Return ID
       const queryText =
         'INSERT INTO Orders(status, orderPlacedTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) VALUES ($1, $2, $3, $4, $5, $6) RETURNING orderid';
       const res = await client.query(queryText, orderValues);
 
+      // Create Payments
       const insertPayment =
         'INSERT INTO Payments(orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) VALUES ($1, $2, $3, $4, $5) RETURNING paymentid';
       const insertPaymentValues = [
@@ -527,20 +531,35 @@ const postOrder = (request, response) => {
       ];
       const paymentID = await client.query(insertPayment, insertPaymentValues);
 
+      // Create Request
       const insertRequest = 'INSERT INTO Requests(paymentID, orderID, customerID) VALUES ($1, $2, $3)';
       const insertRequestValues = [paymentID.rows[0].paymentid, res.rows[0].orderid, data.customerid];
       await client.query(insertRequest, insertRequestValues);
 
+      // Create Contains
       const insertContains = 'INSERT INTO Contains(quantity, foodItemID, orderID) VALUES ($1, $2, $3)';
       for (var i = 0; i < fooditems.length; i++) {
         const insertContainsValues = [fooditems[i].quantity, fooditems[i].fooditemid, res.rows[0].orderid];
         await client.query(insertContains, insertContainsValues);
       }
 
+      // Create Applies that links an order to a promotion
       if (promotionId !== null) {
         const insertApplies = 'INSERT INTO Applies(orderID,promotionID) VALUES ($1, $2)';
         const insertAppliesValues = [res.rows[0].orderid, promotionId];
         await client.query(insertApplies, insertAppliesValues);
+      }
+
+      // Get customer's reward points:
+      const getCusRewardPoints = `SELECT rewardPoints FROM Customers WHERE customerID = $1`;
+      const cusRP = await client.query(getCusRewardPoints, [data.customerid]);
+
+      // Customer use reward points to offset delivery fee
+      if (data.rewardpoints > 0) {
+        let remainRP = cusRP.rows[0].rewardpoints - data.rewardpoints;
+        const updateRewards = 'UPDATE Customers SET rewardPoints = $1 WHERE customerID = $2';
+        const updateRewardsValues = [remainRP, data.customerid];
+        await client.query(updateRewards, updateRewardsValues);
       }
 
       await client.query('COMMIT', (error, results) => {

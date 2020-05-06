@@ -74,8 +74,8 @@ app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId); // CF
 
 // promotions apis
 app.get('/promotions', promotions.getPromotions);
+app.get('/promotions/customer', promotions.getPromotionsNotNull);
 app.get('/promotions/:promotionid', promotions.getPromotionsByID);
-app.get('/promotions/', promotions.getPromotionsNotNull);
 app.get('/promotions/restaurant/:restaurantid', promotions.getPromotionsByRestaurantID);
 
 // admin: accounts
