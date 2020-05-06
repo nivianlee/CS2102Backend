@@ -47,8 +47,31 @@ const getPromotionsByID = (request, response) => {
   });
 };
 
+const getPromotionsByRestaurantID = (request, response) => {
+  const restaurantid = parseInt(request.params.restaurantid);
+  const query = `
+    SELECT DISTINCT O.restaurantID, P.promotionID, P.startTimeStamp, P.endTimeStamp, promotionDetails, percentageAmount, absoluteAmount, deliveryAmount
+    FROM Offers O JOIN 
+    (
+      Promotions P
+      LEFT JOIN TargettedPromoCode USING (promotionID) 
+      LEFT JOIN Percentage USING (promotionID) 
+      LEFT JOIN Amount USING (promotionID) 
+      LEFT JOIN FreeDelivery USING (promotionID)
+    ) ON (O.promotionID = P.promotionID and O.restaurantID = $1) 
+  `;
+
+  pool.query(query, [restaurantid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
 module.exports = {
   getPromotions,
   getPromotionsByID,
   getPromotionsNotNull,
+  getPromotionsByRestaurantID,
 };

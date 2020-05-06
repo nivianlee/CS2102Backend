@@ -748,7 +748,7 @@ CREATE TRIGGER review_trigger
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
 \copy RestaurantStaff(restaurantStaffID, restaurantStaffName, contactNum, restaurantID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
 \copy Manages(restaurantStaffID, foodItemID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
-\copy Promotions(promotionID, startTimeStamp, endTimeStamp) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
+\copy Promotions(promotionID, startTimeStamp, endTimeStamp, promoDescription) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
 \copy Offers(restaurantID, promotionID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Offers.csv' DELIMITER ',' CSV HEADER;
 \copy TargettedPromoCode(promotionID, promotionDetails) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/TargettedPromoCode.csv' DELIMITER ',' CSV HEADER;
 \copy Percentage(promotionID, percentageAmount) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Percentage.csv' DELIMITER ',' CSV HEADER;

@@ -10,6 +10,7 @@ const foodItems = require('./api/common/fooditems');
 const promotions = require('./api/common/promotions');
 const app = express();
 const port = 3000;
+const mws = require('./api/admin/mws');
 
 app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
@@ -70,9 +71,12 @@ app.get('/restaurants', restaurants.getRestaurants); // CFE done
 // fooditems apis
 app.get('/fooditems', foodItems.getFoodItems);
 app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId); // CFE done
+
+// promotions apis
 app.get('/promotions', promotions.getPromotions);
 app.get('/promotions/:promotionid', promotions.getPromotionsByID);
 app.get('/promotions/', promotions.getPromotionsNotNull);
+app.get('/promotions/restaurant/:restaurantid', promotions.getPromotionsByRestaurantID);
 
 // admin: accounts
 app.post('/admin/login', accounts.login);
@@ -86,7 +90,22 @@ app.get('/fdsManagers', fdsManagers.getFDSManagers);
 app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagerById);
 app.post('/fdsManagers', fdsManagers.createFDSManager);
 app.post('/fdsManagers/:managerid', fdsManagers.updateFDSManager);
+app.post('/fdsManagers/:managerid/promotion', fdsManagers.postPromotion);
 app.delete('/fdsManagers/:managerid', fdsManagers.deleteFDSManager);
+
+// admin: MWS for PartTimeSchedules and FullTimeSchedules
+app.get('/mws/', mws.getMwsFullTimeRiders);
+app.get('/mws/:riderid/', mws.getMwsFullTimeRiderById);
+app.get('/mws/:riderid/:monthid', mws.getMwsFullTimeRiderByMonth);
+app.get('/wws/', mws.getWwsPartTimeRiders);
+app.get('/wws/:riderid/', mws.getWwsPartTimeRiderById);
+app.get('/wws/:riderid/:monthid', mws.getWwsPartTimeRiderByMonth);
+app.post('/mws', mws.createMwsFullTimeRider);
+app.post('/wws', mws.createWwsPartTimeRider);
+app.post('/mws/update', mws.updateMwsFullTimeRider);
+app.post('/wws/update', mws.updateWwsPartTimeRider);
+app.delete('/mws/', mws.deleteMwsFullTimeRiderByMonth);
+app.delete('/wws/', mws.deleteWwsPartTimeRiderByWeek);
 
 // admin: restaurant
 app.get('/restaurants', restaurants.getRestaurants);
@@ -114,6 +133,7 @@ app.get('/restaurantstaff/promotionStatistics/:restaurantstaffid', restaurantsta
 app.post('/restaurantstaff', restaurantstaff.createRestaurantStaff);
 app.put('/restaurantstaff/:restaurantstaffid', restaurantstaff.updateRestaurantStaff);
 app.post('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.createFoodItem);
+app.post('/restaurantstaff/:restaurantstaffid/promotion', restaurantstaff.postPromotion);
 app.put('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.updateFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.deleteFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaurantStaff);
