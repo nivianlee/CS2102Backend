@@ -222,36 +222,8 @@ const updateWwsPartTimeRider = (request, response) => {
 };
 
 // // Updates a WWS time period for a Part Time rider 
-// const updateWwsPartTimeRider = (request, response) => {
-//   const query = `UPDATE PartTimeSchedules 
-//                  startTime = $2, endTime = $3, week = $4, day = $5
-//                  WHERE riderid = $1 
-//                  AND week = $4
-//                  AND day = $5
-//                  AND () 
-
-//                  RETURNING *
-//                  ;`
-
-//   const data = {
-//     riderid: request.body.riderid,
-//     startTime: request.body.startTime,
-//     endTime: request.body.endTime,
-//     week: request.body.week,
-//     day: request.body.day
-//   };
-
-//   pool.query(query, Object.values(data),
-//     (error, results) => {
-//       if (error) {
-//         throw error;
-//       }
-//       response.status(201).send({
-//         message: "Succesful update of WWS for PartTime rider!"
-//       });
-//     }
-//   );
-// };
+// No update WWS for partTime rider: To uniquely identify a schedule for a row, must use all attributes. 
+// Easier to use delete and create apis. 
 
 const deleteMwsFullTimeRiderByMonth = (request, response) => {
   const query = `DELETE FROM FullTimeSchedules 
