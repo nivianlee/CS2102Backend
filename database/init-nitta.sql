@@ -31,7 +31,8 @@ DROP TABLE IF EXISTS Shifts CASCADE;
 CREATE TABLE Promotions (
     promotionID INTEGER PRIMARY KEY,
     startTimeStamp TIMESTAMP, 
-    endTimeStamp TIMESTAMP
+    endTimeStamp TIMESTAMP,
+    promoDescription VARCHAR(50)
 );
 
 CREATE TABLE TargettedPromoCode (
@@ -842,11 +843,24 @@ create view TotalCostPerMonth(month, year, totalOrders, totalOrdersSum) as
 
 -- Sets food availability to false if max number is met and no exception raised.
 -- Assumes that insertion of new rows in Orders and Contains are done atomically.
-CREATE OR REPLACE FUNCTION check_food_availability() RETURNS TRIGGER 
-    AS $$
+CREATE OR REPLACE FUNCTION check_or_reset_food_availability() RETURNS TRIGGER
+  AS $$
 DECLARE
-    selectedFoodItemID  INTEGER;
+  mostRecentTimeStamp TIMESTAMP;
+  selectedFoodItemID  INTEGER;
 BEGIN
+    -- Resets food availability if its the first order of the day
+    SELECT O.orderPlacedTimeStamp INTO mostRecentTimeStamp
+    FROM Orders O
+    WHERE O.orderID + 1 = NEW.orderID
+    AND DATE(O.orderPlacedTimeStamp) = DATE(NEW.orderPlacedTimeStamp);
+
+    IF mostRecentTimeStamp IS NULL THEN
+        update FoodItems
+        set availabilityStatus = true;
+    END IF;
+
+    -- Sets the food availability to false if max number is met and no exceptions raised.
     SELECT T.foodItemID INTO selectedFoodItemID
     FROM TotalFoodItemsOrderedPerDay T
     WHERE T.numOrdered > T.maxNumOfOrders
@@ -873,10 +887,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS after_new_contains_trigger ON Contains CASCADE;
-CREATE TRIGGER after_new_contains_trigger 
-    AFTER INSERT ON Contains
-    FOR EACH ROW EXECUTE FUNCTION check_food_availability();
+DROP TRIGGER IF EXISTS after_new_orders_trigger ON Orders CASCADE;
+CREATE CONSTRAINT TRIGGER after_new_orders_trigger 
+    AFTER INSERT ON Orders
+    DEFERRABLE INITIALLY DEFERRED 
+    FOR EACH ROW EXECUTE FUNCTION check_or_reset_food_availability();
 
 -- Resets food availability before the first order of the day.
 CREATE OR REPLACE FUNCTION reset_food_availability() RETURNS TRIGGER
