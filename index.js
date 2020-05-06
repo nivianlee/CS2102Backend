@@ -87,6 +87,7 @@ app.get('/fdsManagers', fdsManagers.getFDSManagers);
 app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagersById);
 app.post('/fdsManagers', fdsManagers.createFDSManager);
 app.post('/fdsManagers/:managerid', fdsManagers.updateFDSManagers);
+app.post('/fdsManagers/:managerid/promotion', fdsManagers.postPromotion);
 app.delete('/fdsManagers/:managerid', fdsManagers.deleteFDSManagers);
 
 // admin: restaurant

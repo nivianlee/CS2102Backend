@@ -347,8 +347,17 @@ const getPromotionalCampaignsStatistics = (request, response) => {
     3. The specific promotion type to enforce covering constraint.
 */
 const postPromotion = (request, response) => {
+  const restaurantstaffid = parseInt(request.params.restaurantstaffid);
+  pool.query('SELECT * FROM RestaurantStaff WHERE restaurantStaffID = $1', [restaurantstaffid], (error, results) => {
+    if (error) {
+      throw error;
+    } else if (results.rows.length == 0) {
+      console.error('Restaurant Staff does not exist.');
+      throw error;
+    }
+  });
+
   const data = {
-    restaurantstaffid: request.body.restaurantstaffid,
     promotionstarttimestamp: request.body.promotionstarttimestamp,
     promotionendtimestamp: request.body.promotionendtimestamp,
     promotiontype: request.body.promotiontype,
@@ -447,6 +456,7 @@ const postPromotion = (request, response) => {
     `;
   } else {
     console.error('Invalid promotion type');
+    throw error;
   }
 
   // This first inserts a new row into Promotions
@@ -457,7 +467,7 @@ const postPromotion = (request, response) => {
       });
     }
     // Next, a new row is inserted for Offers for the newly inserted promotionID.
-    pool.query(offerQuery, [data.restaurantstaffid], (error, results) => {
+    pool.query(offerQuery, [restaurantstaffid], (error, results) => {
       if (error) {
         pool.query('ROLLBACK', (err) => {
           err ? console.error('Error rolling back client', err.stack) : console.log('Rolled back successfully');
