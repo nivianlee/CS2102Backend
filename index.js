@@ -84,7 +84,7 @@ app.get('/fdsManagers/summaryTwo', fdsManagers.getFDSManagerSummaryTwo);
 app.get('/fdsManagers/summaryThree', fdsManagers.getFDSManagerSummaryThree);
 app.get('/fdsManagers/summaryFour', fdsManagers.getFDSManagerSummaryFour);
 app.get('/fdsManagers', fdsManagers.getFDSManagers);
-app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagersById);
+app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagerById);
 app.post('/fdsManagers', fdsManagers.createFDSManager);
 app.post('/fdsManagers/:managerid', fdsManagers.updateFDSManagers);
 app.post('/fdsManagers/:managerid/promotion', fdsManagers.postPromotion);
@@ -125,6 +125,7 @@ app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaura
 app.get('/riders', riders.getRiders);
 app.get('/riders/:riderid', riders.getRiderById);
 app.post('/riders', riders.createRider);
+app.put('/riders/:riderid', riders.updateRider);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);

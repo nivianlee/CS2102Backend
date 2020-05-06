@@ -42,8 +42,40 @@ const createRider = (request, response) => {
   );
 };
 
+const updateRider = (request, response) => {
+  const data = {
+    riderName: request.body.riderName,
+    riderEmail: request.body.riderEmail,
+    contactNum: request.body.contactNum,
+    isOccupied: request.body.isOccupied,
+    isFullTime: request.body.isFullTime,
+    baseSalary: request.body.baseSalary,
+    riderID: parseInt(request.params.riderid),
+  };
+  const values = [
+    data.riderName,
+    data.riderEmail,
+    data.isOccupied,
+    data.contactNum,
+    data.isFullTime,
+    data.baseSalary,
+    data.riderID,
+  ];
+  pool.query(
+    'UPDATE Riders SET riderName = $1, riderEmail = $2, isOccupied = $3, contactNum = $4, isFullTime = $5, baseSalary = $6 WHERE riderID = $7 RETURNING *',
+    values,
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(201).send(`Rider has been updated with rider id: ${data.riderID}`);
+    }
+  );
+};
+
 module.exports = {
   getRiders,
   getRiderById,
   createRider,
+  updateRider,
 };
