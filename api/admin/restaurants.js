@@ -95,13 +95,13 @@ const updateRestaurant = (request, response) => {
     data.restaurantID,
   ];
   pool.query(
-    'UPDATE Restaurants SET restaurantName = $1, minOrderCost = $2, contactNum = $3, address = $4, postalCode = $5, image = $6, WHERE restaurantID = $7',
+    'UPDATE Restaurants SET restaurantName = $1, minOrderCost = $2, contactNum = $3, address = $4, postalCode = $5, image = $6 WHERE restaurantID = $7',
     values,
     (error, results) => {
       if (error) {
         throw error;
       }
-      response.status(201).send(`Restaurant is updated `);
+      response.status(201).send(`Restaurant with restaurant id ${data.restaurantID} has been updated`);
     }
   );
 };
