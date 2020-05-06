@@ -29,7 +29,7 @@ DROP TABLE IF EXISTS DayRanges CASCADE;
 DROP TABLE IF EXISTS Shifts CASCADE;
 
 CREATE TABLE Promotions (
-    promotionID SERIAL PRIMARY KEY,
+    promotionID INTEGER PRIMARY KEY,
     startTimeStamp TIMESTAMP, 
     endTimeStamp TIMESTAMP
 );
@@ -782,7 +782,7 @@ INSERT INTO DayRanges VALUES (6,'{6,7,1,2,3}');
 INSERT INTO DayRanges VALUES (7,'{7,1,2,3,4}');
 
 -- Needs to be after DayRanges
-\copy FullTimeSchedules(riderID, shiftID, rangeID, month) from '/Users/VIAN/Downloads/CS2102/CS2102Backend/database/mock_data/FullTimeSchedules.csv' DELIMITER ',' CSV HEADER;
+\copy FullTimeSchedules(riderID, shiftID, rangeID, month) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FullTimeSchedules.csv' DELIMITER ',' CSV HEADER;
 
 -- Update each `SERIAL` sequence count after .csv insertion 
 select setval('promotions_promotionid_seq',(select max(promotionid) from Promotions));

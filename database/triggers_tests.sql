@@ -14,7 +14,7 @@ BEGIN;
     VALUES (301, FALSE, '5/4/2020 10:00', '5/8/2019 8:06', '5/8/2019 8:06', '5/8/2019 8:15', '5/8/2019 8:21', null, '864 Merchant Hill', 100, 3);
 
     INSERT INTO Contains(quantity, foodItemID, orderID)
-    VALUES(201, 21, 301);
+    VALUES(3, 21, 301);
 COMMIT;
 
 -- Positive Test Case: Sets availabilityStatus for foodItem 21 to false.

@@ -9,7 +9,7 @@ const getFDSManagers = (request, response) => {
   });
 };
 
-const getFDSManagersById = (request, response) => {
+const getFDSManagerById = (request, response) => {
   const managerid = parseInt(request.params.managerid);
 
   pool.query('SELECT * FROM FDSManagers WHERE managerid = $1', [managerid], (error, results) => {
@@ -38,23 +38,24 @@ const createFDSManager = (request, response) => {
   );
 };
 
-const updateFDSManagers = (request, response) => {
+const updateFDSManager = (request, response) => {
   const managerid = parseInt(request.params.managerid);
-  const managername = request.body.managername;
+  const managerName = request.body.managerName;
+  const contactNum = request.body.contactNum;
 
   pool.query(
     'UPDATE FDSManagers SET managername = $1 WHERE managerid = $2 RETURNING *',
-    [managername, managerid],
+    [managerName, managerid],
     (error, results) => {
       if (error) {
         throw error;
       }
-      response.status(201).send(`Manager has been updated with manager name: ${results.rows[0].managername}`);
+      response.status(201).send(`Manager has been updated with manager id: ${managerid}`);
     }
   );
 };
 
-const deleteFDSManagers = (request, response) => {
+const deleteFDSManager = (request, response) => {
   const managerid = parseInt(request.params.managerid);
 
   pool.query('DELETE FROM FDSManagers WHERE managerid = $1 RETURNING *', [managerid], (error, results) => {
@@ -95,7 +96,7 @@ const getFDSManagerSummaryTwo = (request, response) => {
                     JOIN Requests USING (orderID) 
                     JOIN OrderCosts USING (orderID)
                GROUP BY 1,2,3
-               ORDER BY 1,2,3`,
+               ORDER BY to_date(month, 'Mon'),2,3`,
   };
 
   pool.query(query, (error, results) => {
@@ -126,7 +127,7 @@ const getFDSManagerSummaryThree = (request, response) => {
 
 const getFDSManagerSummaryFour = (request, response) => {
   const query = `
-        WITH OrdersByMonth_Riders AS
+        WITH OrdersByMonth_Riders(month, year, orderID, riderID, riderDepartForResTimeStamp, riderDeliverOrderTimeStamp ) AS
         (SELECT TO_CHAR(TO_TIMESTAMP((EXTRACT(month from O.orderplacedtimestamp::date))::text, 'MM'), 'Mon') as month, 
                 EXTRACT(year from O.orderplacedtimestamp::date) as year,
                 orderID,
@@ -134,21 +135,56 @@ const getFDSManagerSummaryFour = (request, response) => {
                 riderDepartForResTimeStamp,
                 riderDeliverOrderTimeStamp
         FROM Orders O
-        ORDER BY 1,2)
+        ORDER BY 1,2),
 
-
-        SELECT riderid, month, year, COUNT(*) AS totalNumberOrdersDelivered, 
-        NULL AS totalHoursWorked,
-        baseSalary AS totalSalaryEarned, 
-        AVG(
-            TRUNC(
-                EXTRACT(
-                    EPOCH FROM AGE(O.riderDeliverOrderTimeStamp, O.riderDepartForResTimeStamp))/60)
-        ) as averageDeliveryTime,
-        COUNT(rating) as numRatings,
-        AVG(rating) as averageRating
-        FROM OrdersByMonth_Riders O join Riders using (riderID) left join Rates using (riderID)
-        GROUP BY Month, Year, RiderID, totalSalaryEarned;
+        HoursByMonth_Riders(riderID, month, hoursWorked) AS 
+         (SELECT * 
+          FROM 
+            ((SELECT riderID, 
+                     TO_CHAR(TO_TIMESTAMP(CEILING(week/4 ::FLOAT)::TEXT, 'MM'), 'Mon') AS month, 
+                     SUM(EXTRACT(HOUR FROM endTime) - EXTRACT(HOUR FROM startTime)) AS hoursWorked 
+              FROM PartTimeSchedules
+              GROUP BY riderID, month
+              ORDER BY riderID, month)
+                UNION
+             (SELECT riderID, 
+                     TO_CHAR(TO_TIMESTAMP(month::text, 'MM'), 'Mon') AS month, 
+                     4*5*8*COUNT(*) AS hoursWorked -- 4 weeks, 5 days a week, 8 hours per day
+              FROM FullTimeSchedules 
+              GROUP BY riderID, month 
+              ORDER BY riderID, month)) AS Result 
+          ORDER BY riderID, month
+        )
+        
+        SELECT  riderid, month, year, 
+                COUNT(O.orderID) AS totalNumberOrdersDelivered, 
+                COALESCE(hoursWorked, 0) AS totalHoursWorked,
+                (SELECT COUNT(orderID)*5 +  
+                       (CASE 
+                          WHEN COUNT(orderID) > 5 THEN 100 
+                          WHEN COUNT(orderID) > 10 THEN 300
+                          ELSE 0
+                        END) 
+                 FROM OrdersByMonth_Riders
+                 WHERE riderID = O.riderID
+                 AND month = O.month
+                 AND year = O.year) + baseSalary AS totalSalaryEarned, 
+                AVG(
+                    TRUNC(
+                      EXTRACT(
+                          EPOCH FROM AGE(O.riderDeliverOrderTimeStamp, O.riderDepartForResTimeStamp)
+                      ) / 60
+                    )
+                ) AS averageDeliveryTime,
+                COUNT(rating) AS numRatings,
+                ROUND(AVG(rating),2) AS averageRating
+        FROM OrdersByMonth_Riders O 
+          JOIN Riders USING(riderID) -- to get baseSalary
+          LEFT JOIN Rates USING(riderID)
+          LEFT JOIN HoursByMonth_Riders H USING(riderID, month)
+        GROUP BY month, year, riderID, hoursWorked, baseSalary
+        ORDER BY riderID, month, year
+        ;
     `;
 
   pool.query(query, (error, results) => {
@@ -293,10 +329,10 @@ const postPromotion = (request, response) => {
 
 module.exports = {
   getFDSManagers,
-  getFDSManagersById,
+  getFDSManagerById,
   createFDSManager,
-  updateFDSManagers,
-  deleteFDSManagers,
+  updateFDSManager,
+  deleteFDSManager,
   getFDSManagerSummaryOne,
   getFDSManagerSummaryTwo,
   getFDSManagerSummaryThree,

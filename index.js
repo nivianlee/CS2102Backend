@@ -10,6 +10,7 @@ const foodItems = require('./api/common/fooditems');
 const promotions = require('./api/common/promotions');
 const app = express();
 const port = 3000;
+const mws = require('./api/admin/mws');
 
 app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
@@ -84,11 +85,25 @@ app.get('/fdsManagers/summaryTwo', fdsManagers.getFDSManagerSummaryTwo);
 app.get('/fdsManagers/summaryThree', fdsManagers.getFDSManagerSummaryThree);
 app.get('/fdsManagers/summaryFour', fdsManagers.getFDSManagerSummaryFour);
 app.get('/fdsManagers', fdsManagers.getFDSManagers);
-app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagersById);
+app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagerById);
 app.post('/fdsManagers', fdsManagers.createFDSManager);
-app.post('/fdsManagers/:managerid', fdsManagers.updateFDSManagers);
+app.post('/fdsManagers/:managerid', fdsManagers.updateFDSManager);
 app.post('/fdsManagers/:managerid/promotion', fdsManagers.postPromotion);
-app.delete('/fdsManagers/:managerid', fdsManagers.deleteFDSManagers);
+app.delete('/fdsManagers/:managerid', fdsManagers.deleteFDSManager);
+
+// admin: MWS for PartTimeSchedules and FullTimeSchedules
+app.get('/mws/', mws.getMwsFullTimeRiders);
+app.get('/mws/:riderid/', mws.getMwsFullTimeRiderById);
+app.get('/mws/:riderid/:monthid', mws.getMwsFullTimeRiderByMonth);
+app.get('/wws/', mws.getWwsPartTimeRiders);
+app.get('/wws/:riderid/', mws.getWwsPartTimeRiderById);
+app.get('/wws/:riderid/:monthid', mws.getWwsPartTimeRiderByMonth);
+app.post('/mws', mws.createMwsFullTimeRider);
+app.post('/wws', mws.createWwsPartTimeRider);
+app.post('/mws/update', mws.updateMwsFullTimeRider);
+app.post('/wws/update', mws.updateWwsPartTimeRider);
+app.delete('/mws/', mws.deleteMwsFullTimeRiderByMonth);
+app.delete('/wws/', mws.deleteWwsPartTimeRiderByWeek);
 
 // admin: restaurant
 app.get('/restaurants', restaurants.getRestaurants);
@@ -116,7 +131,6 @@ app.get('/restaurantstaff/promotionStatistics/:restaurantstaffid', restaurantsta
 app.post('/restaurantstaff', restaurantstaff.createRestaurantStaff);
 app.put('/restaurantstaff/:restaurantstaffid', restaurantstaff.updateRestaurantStaff);
 app.post('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.createFoodItem);
-app.post('/restaurantstaff/:restaurantstaffid/promotion', restaurantstaff.postPromotion);
 app.put('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.updateFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.deleteFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaurantStaff);
@@ -125,6 +139,7 @@ app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaura
 app.get('/riders', riders.getRiders);
 app.get('/riders/:riderid', riders.getRiderById);
 app.post('/riders', riders.createRider);
+app.put('/riders/:riderid', riders.updateRider);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
