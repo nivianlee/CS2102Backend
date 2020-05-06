@@ -72,6 +72,7 @@ app.get('/fooditems', foodItems.getFoodItems);
 app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId); // CFE done
 app.get('/promotions', promotions.getPromotions);
 app.get('/promotions/:promotionid', promotions.getPromotionsByID);
+app.get('/promotions/', promotions.getPromotionsNotNull);
 
 // admin: accounts
 app.post('/admin/login', accounts.login);
