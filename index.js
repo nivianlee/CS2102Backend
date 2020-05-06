@@ -69,8 +69,11 @@ app.get('/restaurants', restaurants.getRestaurants); // CFE done
 // fooditems apis
 app.get('/fooditems', foodItems.getFoodItems);
 app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId); // CFE done
+
+// promotions apis
 app.get('/promotions', promotions.getPromotions);
-app.get('/promotions/:promotionid', promotions.getPromotionsByID);
+app.get('/promotions/promotion/:promotionid', promotions.getPromotionsByID);
+app.get('/promotions/restaurant/:restaurantid', promotions.getPromotionsByRestaurantID);
 
 // admin: accounts
 app.post('/admin/login', accounts.login);
@@ -83,8 +86,9 @@ app.get('/fdsManagers/summaryFour', fdsManagers.getFDSManagerSummaryFour);
 app.get('/fdsManagers', fdsManagers.getFDSManagers);
 app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagerById);
 app.post('/fdsManagers', fdsManagers.createFDSManager);
-app.post('/fdsManagers/:managerid', fdsManagers.updateFDSManager);
-app.delete('/fdsManagers/:managerid', fdsManagers.deleteFDSManager);
+app.post('/fdsManagers/:managerid', fdsManagers.updateFDSManagers);
+app.post('/fdsManagers/:managerid/promotion', fdsManagers.postPromotion);
+app.delete('/fdsManagers/:managerid', fdsManagers.deleteFDSManagers);
 
 // admin: restaurant
 app.get('/restaurants', restaurants.getRestaurants);
@@ -112,6 +116,7 @@ app.get('/restaurantstaff/promotionStatistics/:restaurantstaffid', restaurantsta
 app.post('/restaurantstaff', restaurantstaff.createRestaurantStaff);
 app.put('/restaurantstaff/:restaurantstaffid', restaurantstaff.updateRestaurantStaff);
 app.post('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.createFoodItem);
+app.post('/restaurantstaff/:restaurantstaffid/promotion', restaurantstaff.postPromotion);
 app.put('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.updateFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid/fooditems', restaurantstaff.deleteFoodItem);
 app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaurantStaff);
