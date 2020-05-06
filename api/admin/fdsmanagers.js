@@ -216,12 +216,13 @@ const postPromotion = (request, response) => {
     promotionendtimestamp: request.body.promotionendtimestamp,
     promotiontype: request.body.promotiontype,
     promotiontypeinfo: request.body.promotiontypeinfo,
+    promodescription: request.body.promodescription,
   };
-  const values = [data.promotionstarttimestamp, data.promotionendtimestamp];
+  const values = [data.promotionstarttimestamp, data.promotionendtimestamp, data.promodescription];
   const promotiontype = data.promotiontype;
   const promotiontypeinfo = data.promotiontypeinfo;
 
-  const newPromotionQuery = `INSERT INTO Promotions (startTimeStamp, endTimeStamp) VALUES ($1, $2)`;
+  const newPromotionQuery = `INSERT INTO Promotions (startTimeStamp, endTimeStamp, promoDescription) VALUES ($1, $2, $3)`;
 
   let specificPromoQuery = '';
   let updateQuery = '';
