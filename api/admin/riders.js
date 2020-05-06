@@ -141,8 +141,17 @@ const toggleUpdateRiderOrderTimestamp = (request, response) => {
               if (error) {
                 throw error
               }
+            })
+            const updateQuery = `UPDATE Orders 
+                                 SET status = TRUE
+                                 WHERE orderid = $1
+                                 RETURNING *;`
+            await client.query(updateQuery, values, (error, results) => {
+              if (error) {
+                throw error
+              }
               response.status(201).send({
-                message: `Successfully updated ${keyToUpdate} for ${data.orderid}, and updated Rider ${riderid}.isOccupied = FALSE`,
+                message: `Successfully updated ${keyToUpdate} and Order.status = TRUE (past order) for ${data.orderid}, and updated Rider ${riderid}.isOccupied = FALSE`,
                 "results": results.rows
               })
             })
