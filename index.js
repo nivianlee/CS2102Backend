@@ -44,12 +44,13 @@ app.delete('/customers/customer/:customerid', customers.deleteCustomer); // CFE 
 app.get('/customers/addresses/:customerid', customers.getAddresses); // CFE done
 app.post('/customers/addresses/:customerid', customers.postAddress); // CFE done
 app.put('/customers/addresses/:customerid', customers.updateAddress); // CFE done
-app.delete('/customers/addresses/:customerid/:addressid', customers.deleteAddress); // CFE done
+app.delete('/customers/addresses/:addressid', customers.deleteAddress); // CFE done
 
 app.get('/customers/currentorders/:customerid', customers.getCurrentOrders);
 app.get('/customers/pastorders/:customerid', customers.getPastOrders);
 app.get('/customers/:customerid/order/:orderid', customers.getAnOrderByCusIdNOrderId);
 app.get('/customers/:customerid/orders', customers.getPastOrdersWithRes);
+app.post('/customers/orders', customers.postOrder);
 
 app.get('/customers/reviews', customers.getAllReviews);
 app.get('/customers/reviews/:fooditemid', customers.getReviewsForFoodItem);
@@ -73,7 +74,8 @@ app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId); // CF
 
 // promotions apis
 app.get('/promotions', promotions.getPromotions);
-app.get('/promotions/promotion/:promotionid', promotions.getPromotionsByID);
+app.get('/promotions/customer', promotions.getPromotionsNotNull);
+app.get('/promotions/:promotionid', promotions.getPromotionsByID);
 app.get('/promotions/restaurant/:restaurantid', promotions.getPromotionsByRestaurantID);
 
 // admin: accounts

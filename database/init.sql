@@ -31,7 +31,8 @@ DROP TABLE IF EXISTS Shifts CASCADE;
 CREATE TABLE Promotions (
     promotionID SERIAL PRIMARY KEY,
     startTimeStamp TIMESTAMP, 
-    endTimeStamp TIMESTAMP
+    endTimeStamp TIMESTAMP,
+    promoDescription VARCHAR(100)
 );
 
 CREATE TABLE TargettedPromoCode (

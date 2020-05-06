@@ -189,7 +189,14 @@ const getCurrentOrders = (request, response) => {
   const customerid = parseInt(request.params.customerid);
   const query = `
   SELECT *
-  FROM Requests R natural join Payments P natural join Orders O
+  FROM Requests R 
+  natural join Orders O 
+  natural join Contains C 
+  natural join FoodItems F
+  inner join Restaurants Res on (Res.restaurantID = F.restaurantID) 
+  inner join DeliveryFee D on (O.deliveryID = D.deliveryID)
+  inner join OrderCosts OC on (O.orderid = OC.orderid)
+  inner join Payments P on (P.paymentID = R.paymentID)
   WHERE customerID = $1
   AND O.status = false
 `;
@@ -222,11 +229,11 @@ const getPastOrders = (request, response) => {
 const getPastOrdersWithRes = (request, response) => {
   const customerid = parseInt(request.params.customerid);
   const query = `
-  SELECT distinct O.orderID, Res.restaurantname, Res.contactnum, O.deliveryaddress, O.riderdeliverordertimestamp, O.orderPlacedTimeStamp, sum(quantity*price) as TotalCost
-  FROM Requests R natural join Orders O natural join Contains C natural join FoodItems F inner join Restaurants Res on (Res.restaurantID = F.restaurantID)
+  SELECT distinct O.orderID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, O.orderPlacedTimeStamp, D.deliveryFeeAmount, sum(quantity*price) as TotalCost
+  FROM Requests R natural join Orders O natural join Contains C natural join FoodItems F inner join Restaurants Res on (Res.restaurantID = F.restaurantID) inner join DeliveryFee D on (O.deliveryID = D.deliveryID)
   WHERE customerID = $1
   AND O.status = true
-  GROUP BY O.orderID, Res.restaurantname, Res.contactnum, O.deliveryaddress, O.riderdeliverordertimestamp
+  GROUP BY O.orderID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, D.deliveryFeeAmount
   ORDER BY O.orderPlacedTimeStamp desc
 `;
   pool.query(query, [customerid], (error, results) => {
@@ -451,6 +458,134 @@ const deleteCustomerCreditCard = (request, response) => {
   });
 };
 
+const postOrder = (request, response) => {
+  // Adding of Address & Credit cards are handled on FE
+
+  const data = {
+    customerid: request.body.customerid,
+    address: request.body.deliveryaddress,
+    ordertimestamp: new Date(),
+    fooditems: request.body.fooditems,
+    specialrequest: request.body.specialrequest,
+    userewardpoints: request.body.userewardpoints,
+    rewardpoints: request.body.rewardpoints,
+    usecash: request.body.usecash,
+    usecreditcard: request.body.usecreditcard,
+    creditcardnum: request.body.creditcardnumber,
+    orderstatue: false,
+    promotionid: request.body.promotionid,
+  };
+  // console.log(data);
+
+  let deliveryid = 0;
+  let totalQty = 0;
+  const fooditems = data.fooditems;
+
+  // Determine Delivery Fee
+  for (var i = 0; i < fooditems.length; i++) {
+    totalQty += fooditems[i].quantity;
+
+    if (totalQty < 10) {
+      deliveryid = 1;
+    } else if (totalQty >= 10 && totalQty <= 15) {
+      deliveryid = 2;
+    } else {
+      deliveryid = 3;
+    }
+  }
+
+  const promotionId = data.promotionid;
+
+  (async () => {
+    // note: we don't try/catch this because if connecting throws an exception
+    // we don't need to dispose of the client (it will be undefined)
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      // Randomly select rider who is free
+      const getRiderId = `SELECT riderID FROM Riders WHERE isOccupied = true LIMIT 1`;
+      const riderid = await client.query(getRiderId);
+
+      const orderValues = [
+        data.orderstatue,
+        data.ordertimestamp,
+        data.specialrequest,
+        data.address,
+        riderid.rows[0].riderid,
+        deliveryid,
+      ];
+      // Create Order & Return ID
+      const queryText =
+        'INSERT INTO Orders(status, orderPlacedTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) VALUES ($1, $2, $3, $4, $5, $6) RETURNING orderid';
+      const res = await client.query(queryText, orderValues);
+
+      // Create Payments
+      const insertPayment =
+        'INSERT INTO Payments(orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) VALUES ($1, $2, $3, $4, $5) RETURNING paymentid';
+      const insertPaymentValues = [
+        res.rows[0].orderid,
+        data.creditcardnum,
+        data.usecash,
+        data.usecreditcard,
+        data.userewardpoints,
+      ];
+      const paymentID = await client.query(insertPayment, insertPaymentValues);
+
+      // Create Request
+      const insertRequest = 'INSERT INTO Requests(paymentID, orderID, customerID) VALUES ($1, $2, $3)';
+      const insertRequestValues = [paymentID.rows[0].paymentid, res.rows[0].orderid, data.customerid];
+      await client.query(insertRequest, insertRequestValues);
+
+      // Create Contains
+      const insertContains = 'INSERT INTO Contains(quantity, foodItemID, orderID) VALUES ($1, $2, $3)';
+      for (var i = 0; i < fooditems.length; i++) {
+        const insertContainsValues = [fooditems[i].quantity, fooditems[i].fooditemid, res.rows[0].orderid];
+        await client.query(insertContains, insertContainsValues);
+      }
+
+      // Create Applies that links an order to a promotion
+      if (promotionId !== null) {
+        const insertApplies = 'INSERT INTO Applies(orderID,promotionID) VALUES ($1, $2)';
+        const insertAppliesValues = [res.rows[0].orderid, promotionId];
+        await client.query(insertApplies, insertAppliesValues);
+      }
+
+      // Get customer's reward points:
+      const getCusRewardPoints = `SELECT rewardPoints FROM Customers WHERE customerID = $1`;
+      const cusRP = await client.query(getCusRewardPoints, [data.customerid]);
+
+      // Customer use reward points to offset delivery fee
+      if (data.rewardpoints > 0) {
+        let remainRP = cusRP.rows[0].rewardpoints - data.rewardpoints;
+        const updateRewards = 'UPDATE Customers SET rewardPoints = $1 WHERE customerID = $2';
+        const updateRewardsValues = [remainRP, data.customerid];
+        await client.query(updateRewards, updateRewardsValues);
+      }
+
+      await client.query('COMMIT', (error, results) => {
+        if (error) {
+          const msg = {
+            message: error,
+          };
+          response.status(406).send(msg);
+          throw error;
+        }
+        const msg = {
+          success: 'True',
+          message: `Order has been created successfully`,
+          data: data,
+        };
+        response.status(201).send(msg);
+      });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  })().catch((e) => console.error(e.stack));
+};
+
 module.exports = {
   verifyUser,
   getCustomers,
@@ -466,6 +601,7 @@ module.exports = {
   getPastOrders,
   getPastOrdersWithRes,
   getAnOrderByCusIdNOrderId,
+  postOrder,
   getAllReviews,
   getReviewsForFoodItem,
   postReview,
