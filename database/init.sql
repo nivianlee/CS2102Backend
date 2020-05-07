@@ -269,14 +269,12 @@ CREATE TABLE FullTimeSchedules(
 CREATE OR REPLACE FUNCTION check_payment_constraint() RETURNS TRIGGER 
 	AS $$ 
 BEGIN
-	IF (NEW.useCash AND NOT NEW.useCreditCard AND NOT NEW.useRewardPoints) THEN 
+	IF (NEW.useCash AND NOT NEW.useCreditCard) THEN 
     RETURN NULL;
-	ELSIF NOT NEW.useCash AND NEW.useCreditCard AND NOT NEW.useRewardPoints THEN 
-    RETURN NULL;
-	ELSIF NOT NEW.useCash AND NOT NEW.useCreditCard AND NEW.useRewardPoints THEN
+	ELSIF NOT NEW.useCash AND NEW.useCreditCard THEN 
     RETURN NULL;
 	ELSE 
-		RAISE exception 'paymentid % cannot have more than 1 payment type set as TRUE', NEW.paymentid;
+		RAISE exception 'paymentid % must either be useCash=TRUE or useCreditCard=TRUE, not both or none', NEW.paymentid;
 	END IF;  
 END; 
 $$ language plpgsql;
