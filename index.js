@@ -142,9 +142,12 @@ app.delete('/restaurantstaff/:restaurantstaffid', restaurantstaff.deleteRestaura
 // admin: riders
 app.get('/riders', riders.getRiders);
 app.get('/riders/:riderid', riders.getRiderById);
+app.get('/riders/:riderid/getAllRidersSummary', riders.getAllRidersSummary); // riderid is not required here
+app.get('/riders/:riderid/getRiderSummaryById', riders.getRiderSummaryById);
 app.post('/riders', riders.createRider);
 app.put('/riders/:riderid', riders.updateRider);
 app.post('/riders/toggleOrderTimestamp', riders.toggleUpdateRiderOrderTimestamp);
+
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
