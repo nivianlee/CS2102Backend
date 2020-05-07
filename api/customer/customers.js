@@ -567,7 +567,7 @@ const postOrder = (request, response) => {
           const msg = {
             message: error,
           };
-          response.status(406).send(msg);
+          response.status(400).send(msg);
           throw error;
         }
         const msg = {
