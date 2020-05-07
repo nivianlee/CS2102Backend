@@ -269,14 +269,12 @@ CREATE TABLE FullTimeSchedules(
 CREATE OR REPLACE FUNCTION check_payment_constraint() RETURNS TRIGGER 
 	AS $$ 
 BEGIN
-	IF (NEW.useCash AND NOT NEW.useCreditCard AND NOT NEW.useRewardPoints) THEN 
+	IF (NEW.useCash AND NOT NEW.useCreditCard) THEN 
     RETURN NULL;
-	ELSIF NOT NEW.useCash AND NEW.useCreditCard AND NOT NEW.useRewardPoints THEN 
-    RETURN NULL;
-	ELSIF NOT NEW.useCash AND NOT NEW.useCreditCard AND NEW.useRewardPoints THEN
+	ELSIF NOT NEW.useCash AND NEW.useCreditCard THEN 
     RETURN NULL;
 	ELSE 
-		RAISE exception 'paymentid % cannot have more than 1 payment type set as TRUE', NEW.paymentid;
+		RAISE exception 'paymentid % must either be useCash=TRUE or useCreditCard=TRUE, not both or none', NEW.paymentid;
 	END IF;  
 END; 
 $$ language plpgsql;
@@ -744,11 +742,11 @@ CREATE TRIGGER review_trigger
     EXECUTE FUNCTION check_if_customer_ordered_fooditem();
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
+\copy Promotions(promotionID, startTimeStamp, endTimeStamp, promoDescription) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, contactNum, address, postalCode, image) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
 \copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
 \copy RestaurantStaff(restaurantStaffID, restaurantStaffName, contactNum, restaurantID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
 \copy Manages(restaurantStaffID, foodItemID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
-\copy Promotions(promotionID, startTimeStamp, endTimeStamp) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
 \copy Offers(restaurantID, promotionID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Offers.csv' DELIMITER ',' CSV HEADER;
 \copy TargettedPromoCode(promotionID, promotionDetails) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/TargettedPromoCode.csv' DELIMITER ',' CSV HEADER;
 \copy Percentage(promotionID, percentageAmount) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Percentage.csv' DELIMITER ',' CSV HEADER;
