@@ -20,6 +20,17 @@ const getRiderById = (request, response) => {
   });
 };
 
+const getOrdersByRiderId = (request, response) => {
+  const riderID = parseInt(request.params.riderid);
+
+  pool.query('SELECT * FROM Orders WHERE riderID = $1', [riderID], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
 const createRider = (request, response) => {
   const data = {
     riderName: request.body.riderName,
@@ -287,9 +298,10 @@ const toggleUpdateRiderOrderTimestamp = (request, response) => {
 module.exports = {
   getRiders,
   getRiderById,
+  getOrdersByRiderId,
   createRider,
   updateRider,
   getAllRidersSummary,
   getRiderSummaryById,
-  toggleUpdateRiderOrderTimestamp
+  toggleUpdateRiderOrderTimestamp,
 };
