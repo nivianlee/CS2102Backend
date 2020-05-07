@@ -168,7 +168,7 @@ CREATE TABLE Customers (
     customerName VARCHAR(50) NOT NULL,
     customerEmail VARCHAR(50) UNIQUE NOT NULL,
     customerPassword VARCHAR(50) NOT NULL,
-    customerPhone VARCHAR(8) UNIQUE NOT NULL,
+    customerPhone VARCHAR(10) UNIQUE NOT NULL,
     rewardPoints INTEGER NOT NULL DEFAULT 0,
     dateCreated DATE NOT NULL
 );
