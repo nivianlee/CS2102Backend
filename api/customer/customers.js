@@ -229,11 +229,11 @@ const getPastOrders = (request, response) => {
 const getPastOrdersWithRes = (request, response) => {
   const customerid = parseInt(request.params.customerid);
   const query = `
-  SELECT distinct O.orderID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, O.orderPlacedTimeStamp, D.deliveryFeeAmount, sum(quantity*price) as TotalCost
+  SELECT distinct O.orderID, Res.restaurantID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, O.orderPlacedTimeStamp, D.deliveryFeeAmount, sum(quantity*price) as TotalCost
   FROM Requests R natural join Orders O natural join Contains C natural join FoodItems F inner join Restaurants Res on (Res.restaurantID = F.restaurantID) inner join DeliveryFee D on (O.deliveryID = D.deliveryID)
   WHERE customerID = $1
   AND O.status = true
-  GROUP BY O.orderID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, D.deliveryFeeAmount
+  GROUP BY O.orderID, Res.restaurantID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, D.deliveryFeeAmount
   ORDER BY O.orderPlacedTimeStamp desc
 `;
   pool.query(query, [customerid], (error, results) => {
@@ -555,7 +555,7 @@ const postOrder = (request, response) => {
       const cusRP = await client.query(getCusRewardPoints, [data.customerid]);
 
       // Customer use reward points to offset delivery fee
-      if (data.rewardpoints > 0) {
+      if (data.rewardpoints > 0 && data.userewardpoints === true) {
         let remainRP = cusRP.rows[0].rewardpoints - data.rewardpoints;
         const updateRewards = 'UPDATE Customers SET rewardPoints = $1 WHERE customerID = $2';
         const updateRewardsValues = [remainRP, data.customerid];
@@ -567,7 +567,7 @@ const postOrder = (request, response) => {
           const msg = {
             message: error,
           };
-          response.status(406).send(msg);
+          response.status(400).send(msg);
           throw error;
         }
         const msg = {
