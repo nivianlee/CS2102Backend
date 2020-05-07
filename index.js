@@ -144,6 +144,7 @@ app.get('/riders', riders.getRiders);
 app.get('/riders/:riderid', riders.getRiderById);
 app.post('/riders', riders.createRider);
 app.put('/riders/:riderid', riders.updateRider);
+app.post('/riders/toggleOrderTimestamp', riders.toggleUpdateRiderOrderTimestamp);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
