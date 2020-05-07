@@ -489,7 +489,7 @@ const postPromotion = (request, response) => {
               err ? console.error('Error rolling back client', err.stack) : console.log('Rolled back successfully');
             });
           }
-          response.status(201).send({ message: 'Promotion has been added successfully!' });
+          response.status(201).send('Promotion has been added successfully!');
         });
       });
     });

@@ -94,18 +94,19 @@ app.post('/fdsManagers/:managerid/promotion', fdsManagers.postPromotion);
 app.delete('/fdsManagers/:managerid', fdsManagers.deleteFDSManager);
 
 // admin: MWS for PartTimeSchedules and FullTimeSchedules
-app.get('/mws/', mws.getMwsFullTimeRiders);
+app.get('/shifts', mws.getShiftsTable);
+app.get('/mws', mws.getMwsFullTimeRiders);
 app.get('/mws/:riderid/', mws.getMwsFullTimeRiderById);
 app.get('/mws/:riderid/:monthid', mws.getMwsFullTimeRiderByMonth);
-app.get('/wws/', mws.getWwsPartTimeRiders);
+app.get('/wws', mws.getWwsPartTimeRiders);
 app.get('/wws/:riderid/', mws.getWwsPartTimeRiderById);
 app.get('/wws/:riderid/:monthid', mws.getWwsPartTimeRiderByMonth);
 app.post('/mws', mws.createMwsFullTimeRider);
 app.post('/wws', mws.createWwsPartTimeRider);
 app.post('/mws/update', mws.updateMwsFullTimeRider);
 app.post('/wws/update', mws.updateWwsPartTimeRider);
-app.delete('/mws/', mws.deleteMwsFullTimeRiderByMonth);
-app.delete('/wws/', mws.deleteWwsPartTimeRiderByWeek);
+app.delete('/mws', mws.deleteMwsFullTimeRiderByMonth);
+app.delete('/wws', mws.deleteWwsPartTimeRiderByWeek);
 
 // admin: restaurant
 app.get('/restaurants', restaurants.getRestaurants);
@@ -145,6 +146,7 @@ app.get('/riders/:riderid/getAllRidersSummary', riders.getAllRidersSummary); // 
 app.get('/riders/:riderid/getRiderSummaryById', riders.getRiderSummaryById);
 app.post('/riders', riders.createRider);
 app.put('/riders/:riderid', riders.updateRider);
+app.post('/riders/toggleOrderTimestamp', riders.toggleUpdateRiderOrderTimestamp);
 
 
 app.listen(port, () => {
