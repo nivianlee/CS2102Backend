@@ -29,9 +29,10 @@ DROP TABLE IF EXISTS DayRanges CASCADE;
 DROP TABLE IF EXISTS Shifts CASCADE;
 
 CREATE TABLE Promotions (
-    promotionID INTEGER PRIMARY KEY,
+    promotionID SERIAL PRIMARY KEY,
     startTimeStamp TIMESTAMP, 
-    endTimeStamp TIMESTAMP
+    endTimeStamp TIMESTAMP,
+    promoDescription VARCHAR(100)
 );
 
 CREATE TABLE TargettedPromoCode (
@@ -785,6 +786,7 @@ INSERT INTO DayRanges VALUES (7,'{7,1,2,3,4}');
 \copy FullTimeSchedules(riderID, shiftID, rangeID, month) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FullTimeSchedules.csv' DELIMITER ',' CSV HEADER;
 
 -- Update each `SERIAL` sequence count after .csv insertion 
+select setval('promotions_promotionid_seq',(select max(promotionid) from Promotions));
 select setval('restaurants_restaurantid_seq',(select max(restaurantid) from Restaurants));
 select setval('fooditems_fooditemid_seq',(select max(fooditemid) from FoodItems));
 select setval('restaurantstaff_restaurantstaffid_seq',(select max(restaurantstaffid) from RestaurantStaff));
@@ -839,14 +841,24 @@ create view TotalCostPerMonth(month, year, totalOrders, totalOrdersSum) as
                ORDER BY year, month) as res);
 
 /* Additional triggers that can only be created after mock data is inserted */
-
--- Sets food availability to false if max number is met and no exception raised.
--- Assumes that insertion of new rows in Orders and Contains are done atomically.
-CREATE OR REPLACE FUNCTION check_food_availability() RETURNS TRIGGER 
-    AS $$
+CREATE OR REPLACE FUNCTION check_or_reset_food_availability() RETURNS TRIGGER
+  AS $$
 DECLARE
-    selectedFoodItemID  INTEGER;
+  mostRecentTimeStamp TIMESTAMP;
+  selectedFoodItemID  INTEGER;
 BEGIN
+    -- Resets food availability if its the first order of the day
+    SELECT O.orderPlacedTimeStamp INTO mostRecentTimeStamp
+    FROM Orders O
+    WHERE O.orderID + 1 = NEW.orderID
+    AND DATE(O.orderPlacedTimeStamp) = DATE(NEW.orderPlacedTimeStamp);
+
+    IF mostRecentTimeStamp IS NULL THEN
+        update FoodItems
+        set availabilityStatus = true;
+    END IF;
+
+    -- Sets the food availability to false if max number is met and no exceptions raised.
     SELECT T.foodItemID INTO selectedFoodItemID
     FROM TotalFoodItemsOrderedPerDay T
     WHERE T.numOrdered > T.maxNumOfOrders
@@ -873,34 +885,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS after_new_contains_trigger ON Contains CASCADE;
-CREATE TRIGGER after_new_contains_trigger 
-    AFTER INSERT ON Contains
-    FOR EACH ROW EXECUTE FUNCTION check_food_availability();
-
--- Resets food availability before the first order of the day.
-CREATE OR REPLACE FUNCTION reset_food_availability() RETURNS TRIGGER
-    AS $$
-DECLARE
-    mostRecentTimeStamp TIMESTAMP;
-BEGIN
-    SELECT O.orderPlacedTimeStamp INTO mostRecentTimeStamp
-    FROM Orders O
-    WHERE O.orderID + 1 = NEW.orderID
-    AND DATE(O.orderPlacedTimeStamp) = DATE(NEW.orderPlacedTimeStamp);
-
-    IF mostRecentTimeStamp IS NULL THEN
-        update FoodItems
-        set availabilityStatus = true;
-    END IF;
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
 DROP TRIGGER IF EXISTS after_new_orders_trigger ON Orders CASCADE;
-CREATE TRIGGER after_new_orders_trigger 
+CREATE CONSTRAINT TRIGGER after_new_orders_trigger 
     AFTER INSERT ON Orders
-    FOR EACH ROW EXECUTE FUNCTION reset_food_availability();
+    DEFERRABLE INITIALLY DEFERRED 
+    FOR EACH ROW EXECUTE FUNCTION check_or_reset_food_availability();
 
 -- When user create an account, the system will auto add address with customer acc
 CREATE OR REPLACE FUNCTION add_customer_and_address(customerName text, customerEmail text, customerPassword text, customerPhone text, rewardPoints integer, dateCreated date, address text, postalCode integer)
