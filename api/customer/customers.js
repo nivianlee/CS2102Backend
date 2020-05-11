@@ -520,7 +520,7 @@ const postOrder = (request, response) => {
     try {
       await client.query('BEGIN');
       // Randomly select rider who is free
-      const getRiderId = `SELECT riderID FROM Riders WHERE isOccupied = true LIMIT 1`;
+      const getRiderId = `SELECT riderID FROM Riders WHERE isOccupied = false LIMIT 1`;
       const riderid = await client.query(getRiderId);
 
       const orderValues = [
