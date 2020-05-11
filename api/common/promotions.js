@@ -70,9 +70,35 @@ const getPromotionsByRestaurantID = (request, response) => {
   });
 };
 
+const getGeneralPromotionsAndPromotionsByRestaurantID = (request, response) => {
+  const restaurantid = parseInt(request.params.restaurantid);
+  const query = `
+  WITH AllPromotions as (
+    SELECT *
+    FROM Promotions P
+    LEFT JOIN TargettedPromoCode USING (promotionID) 
+    LEFT JOIN Percentage USING (promotionID) 
+    LEFT JOIN Amount USING (promotionID) 
+    LEFT JOIN FreeDelivery USING (promotionID)
+    LEFT JOIN Offers USING (promotionID)
+  )
+  SELECT *
+  FROM AllPromotions
+  WHERE restaurantID = $1 OR restaurantID IS NULL
+  ORDER BY restaurantID
+  `;
+  pool.query(query, [restaurantid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
 module.exports = {
   getPromotions,
   getPromotionsByID,
   getPromotionsNotNull,
   getPromotionsByRestaurantID,
+  getGeneralPromotionsAndPromotionsByRestaurantID,
 };
