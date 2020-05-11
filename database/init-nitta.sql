@@ -727,34 +727,34 @@ CREATE TRIGGER full_time_riders_schedule_valid_rider_trigger
     EXECUTE FUNCTION check_full_time_rider_valid_rider();
 
 -- Ensures that a customer can only review a food item he ordered
--- CREATE OR REPLACE FUNCTION check_if_customer_ordered_fooditem() RETURNS TRIGGER
---     AS $$
--- DECLARE
---     foodItemIDBeingReviewed INTEGER;
--- BEGIN
---     SELECT F.foodItemID INTO foodItemIDBeingReviewed
---         FROM Customers C 
---         NATURAL JOIN Requests R
---         NATURAL JOIN Orders O
---         NATURAL JOIN Contains C2
---         NATURAL JOIN FoodItems F
---         WHERE F.foodItemID = NEW.foodItemID
---         AND C.customerID = NEW.customerID
---         AND O.status = true;
+CREATE OR REPLACE FUNCTION check_if_customer_ordered_fooditem() RETURNS TRIGGER
+    AS $$
+DECLARE
+    foodItemIDBeingReviewed INTEGER;
+BEGIN
+    SELECT F.foodItemID INTO foodItemIDBeingReviewed
+        FROM Customers C 
+        NATURAL JOIN Requests R
+        NATURAL JOIN Orders O
+        NATURAL JOIN Contains C2
+        NATURAL JOIN FoodItems F
+        WHERE F.foodItemID = NEW.foodItemID
+        AND C.customerID = NEW.customerID
+        AND O.status = true;
 
---     IF foodItemIDBeingReviewed IS NULL THEN
---         RAISE EXCEPTION 'CustomerID % did not order this food item % ', NEW.customerID, NEW.foodItemID;
---     END IF;
---     RETURN NEW;
---     RETURN NULL;
--- END;
--- $$ language plpgsql;
+    IF foodItemIDBeingReviewed IS NULL THEN
+        RAISE EXCEPTION 'CustomerID % did not order this food item % ', NEW.customerID, NEW.foodItemID;
+    END IF;
+    RETURN NEW;
+    RETURN NULL;
+END;
+$$ language plpgsql;
 
--- DROP TRIGGER IF EXISTS review_trigger ON Reviews CASCADE;
--- CREATE TRIGGER review_trigger
---     BEFORE INSERT ON Reviews
---     FOR EACH ROW
---     EXECUTE FUNCTION check_if_customer_ordered_fooditem();
+DROP TRIGGER IF EXISTS review_trigger ON Reviews CASCADE;
+CREATE TRIGGER review_trigger
+    BEFORE INSERT ON Reviews
+    FOR EACH ROW
+    EXECUTE FUNCTION check_if_customer_ordered_fooditem();
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Promotions(promotionID, startTimeStamp, endTimeStamp, promoDescription) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
@@ -853,6 +853,52 @@ create view TotalCostPerMonth(month, year, totalOrders, totalOrdersSum) as
                ORDER BY year, month) as res);
 
 /* Additional triggers that can only be created after mock data is inserted */
+CREATE OR REPLACE FUNCTION check_covering_constraint_on_promotions() RETURNS TRIGGER
+    AS $$
+DECLARE
+    violateCoveringConstraintPromotionID INTEGER;
+    belongToMoreThanOneCategoryPromotionID INTEGER;
+BEGIN
+    SELECT P.promotionID INTO violateCoveringConstraintPromotionID
+      FROM Promotions P
+      LEFT JOIN TargettedPromoCode USING (promotionID) 
+      LEFT JOIN Percentage USING (promotionID) 
+      LEFT JOIN Amount USING (promotionID) 
+      LEFT JOIN FreeDelivery USING (promotionID)
+      WHERE promotiondetails IS NULL 
+      AND percentageamount IS NULL
+      AND absoluteamount IS NULL
+      AND deliveryamount IS NULL;
+
+    IF violateCoveringConstraintPromotionID IS NOT NULL THEN
+        RAISE EXCEPTION 'Promotion % must belong to one of the categories!', violateCoveringConstraintPromotionID;
+    END IF;
+
+    SELECT P.promotionID INTO belongToMoreThanOneCategoryPromotionID
+      FROM Promotions P
+      LEFT JOIN TargettedPromoCode USING (promotionID) 
+      LEFT JOIN Percentage USING (promotionID) 
+      LEFT JOIN Amount USING (promotionID) 
+      LEFT JOIN FreeDelivery USING (promotionID)
+      WHERE (promotiondetails IS NOT NULL AND percentageamount IS NOT NULL) 
+      OR (promotiondetails IS NOT NULL AND absoluteamount IS NOT NULL) 
+      OR (promotiondetails IS NOT NULL AND deliveryamount IS NOT NULL) 
+      OR (percentageamount IS NOT NULL AND absoluteamount IS NOT NULL) 
+      OR (percentageamount IS NOT NULL AND deliveryamount IS NOT NULL) 
+      OR (absoluteamount IS NOT NULL AND deliveryamount IS NOT NULL); 
+
+    IF belongToMoreThanOneCategoryPromotionID IS NOT NULL THEN
+        RAISE EXCEPTION 'Promotion % must belong to exactly one of the categories!', belongToMoreThanOneCategoryPromotionID;
+    END IF;
+    RETURN NULL;
+END;
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS promotions_trigger ON Promotions CASCADE;
+CREATE CONSTRAINT TRIGGER promotions_trigger 
+    AFTER INSERT OR UPDATE OR DELETE ON Promotions
+    DEFERRABLE INITIALLY DEFERRED 
+    FOR EACH ROW EXECUTE FUNCTION check_covering_constraint_on_promotions();
 
 CREATE OR REPLACE FUNCTION check_or_reset_food_availability() RETURNS TRIGGER
   AS $$
