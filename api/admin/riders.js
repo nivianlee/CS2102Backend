@@ -31,6 +31,17 @@ const getOrdersByRiderId = (request, response) => {
   });
 };
 
+const getRatingsByRiderId = (request, response) => {
+  const riderID = parseInt(request.params.riderid);
+
+  pool.query('SELECT * FROM Rates WHERE riderID = $1 ORDER BY orderID', [riderID], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
 const createRider = (request, response) => {
   const data = {
     riderName: request.body.riderName,
@@ -306,6 +317,7 @@ module.exports = {
   getRiders,
   getRiderById,
   getOrdersByRiderId,
+  getRatingsByRiderId,
   createRider,
   updateRider,
   getAllRidersSummary,
