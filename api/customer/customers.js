@@ -280,6 +280,23 @@ const getReviewsForFoodItem = (request, response) => {
   });
 };
 
+const getFoodItemReviewsByRestaurantID = (request, response) => {
+  const restaurantid = parseInt(request.params.restaurantid);
+  const query = `
+    SELECT R.reviewID, R.reviewImg, R.reviewMsg, R.customerID, R.foodItemID, F.restaurantID
+    FROM Reviews R JOIN FoodItems F USING (foodItemID)
+    WHERE F.restaurantID = $1
+    ORDER BY R.reviewID
+  `;
+
+  pool.query(query, [restaurantid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
 const postReview = (request, response) => {
   const data = {
     reviewimg: request.body.reviewimg,
@@ -604,6 +621,7 @@ module.exports = {
   postOrder,
   getAllReviews,
   getReviewsForFoodItem,
+  getFoodItemReviewsByRestaurantID,
   postReview,
   updateReview,
   deleteReview,
