@@ -54,6 +54,7 @@ app.post('/customers/orders', customers.postOrder);
 
 app.get('/customers/reviews', customers.getAllReviews);
 app.get('/customers/reviews/fooditem/:fooditemid', customers.getReviewsForFoodItem);
+app.get('/customers/:customerid/reviews/fooditem/:fooditemid', customers.getReviewForFoodItem);
 app.get('/customers/reviews/restaurant/:restaurantid', customers.getFoodItemReviewsByRestaurantID);
 
 app.post('/customers/reviews/:customerid', customers.postReview);

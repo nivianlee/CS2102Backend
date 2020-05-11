@@ -280,6 +280,22 @@ const getReviewsForFoodItem = (request, response) => {
   });
 };
 
+const getReviewForFoodItem = (request, response) => {
+  const fooditemid = parseInt(request.params.fooditemid);
+  const customerid = parseInt(request.params.customerid);
+  pool.query(
+    'SELECT * FROM Reviews WHERE foodItemID = $1 AND customerID = $2',
+    [fooditemid, customerid],
+    (error, results) => {
+      if (error) {
+        response.status(400).send(error);
+        throw error;
+      }
+      response.status(200).json(results.rows);
+    }
+  );
+};
+
 const getFoodItemReviewsByRestaurantID = (request, response) => {
   const restaurantid = parseInt(request.params.restaurantid);
   const query = `
@@ -317,7 +333,7 @@ const postReview = (request, response) => {
       response.status(400).send(error);
       throw error;
     }
-    response.status(200).send({ message: 'Review has been added successfully!' });
+    response.status(201).send({ message: 'Review has been added successfully!' });
   });
 };
 
@@ -646,6 +662,7 @@ module.exports = {
   postOrder,
   getAllReviews,
   getReviewsForFoodItem,
+  getReviewForFoodItem,
   getFoodItemReviewsByRestaurantID,
   postReview,
   updateReview,
