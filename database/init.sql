@@ -756,6 +756,53 @@ CREATE TRIGGER review_trigger
     FOR EACH ROW
     EXECUTE FUNCTION check_if_customer_ordered_fooditem();
 
+CREATE OR REPLACE FUNCTION check_covering_constraint_on_promotions() RETURNS TRIGGER
+    AS $$
+DECLARE
+    violateCoveringConstraintPromotionID INTEGER;
+    belongToMoreThanOneCategoryPromotionID INTEGER;
+BEGIN
+    SELECT P.promotionID INTO illegalPromotionID
+      FROM Promotions P
+      LEFT JOIN TargettedPromoCode USING (promotionID) 
+      LEFT JOIN Percentage USING (promotionID) 
+      LEFT JOIN Amount USING (promotionID) 
+      LEFT JOIN FreeDelivery USING (promotionID)
+      WHERE (promotiondetails IS NULL) 
+      AND (percentageamount IS NULL) 
+      AND (absoluteamount IS NULL)
+      AND (deliveryamount IS NULL)
+
+    IF violateCoveringConstraintPromotionID IS NOT NULL THEN
+        RAISE EXCEPTION 'Promotion % must belong to one of the categories!', violateCoveringConstraintPromotionID;
+    END IF;
+
+    SELECT P.promotionID INTO belongToMoreThanOneCategoryPromotionID
+      FROM Promotions P
+      LEFT JOIN TargettedPromoCode USING (promotionID) 
+      LEFT JOIN Percentage USING (promotionID) 
+      LEFT JOIN Amount USING (promotionID) 
+      LEFT JOIN FreeDelivery USING (promotionID)
+      WHERE (promotiondetails IS NOT NULL AND percentageamount IS NOT NULL) 
+      OR (promotiondetails IS NOT NULL AND absoluteamount IS NOT NULL) 
+      OR (promotiondetails IS NOT NULL AND deliveryamount IS NOT NULL) 
+      OR (percentageamount IS NOT NULL AND absoluteamount IS NOT NULL) 
+      OR (percentageamount IS NOT NULL AND deliveryamount IS NOT NULL) 
+      OR (absoluteamount IS NOT NULL AND deliveryamount IS NOT NULL) 
+
+    IF belongToMoreThanOneCategoryPromotionID IS NOT NULL THEN
+        RAISE EXCEPTION 'Promotion % must belong to exactly one of the categories!', belongToMoreThanOneCategoryPromotionID;
+    END IF;
+    RETURN NULL;
+END;
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS promotions_trigger ON Promotions CASCADE;
+CREATE CONSTRAINT TRIGGER promotions_trigger 
+    AFTER INSERT OR UPDATE OR DELETE ON Promotions
+    DEFERRABLE INITIALLY DEFERRED 
+    FOR EACH ROW EXECUTE FUNCTION check_covering_constraint_on_promotions();
+
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Promotions(promotionID, startTimeStamp, endTimeStamp, promoDescription) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
 \copy Restaurants(restaurantID, restaurantName, minOrderCost, contactNum, address, postalCode, image) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;

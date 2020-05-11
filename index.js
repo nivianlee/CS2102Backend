@@ -53,7 +53,8 @@ app.get('/customers/:customerid/orders', customers.getPastOrdersWithRes);
 app.post('/customers/orders', customers.postOrder);
 
 app.get('/customers/reviews', customers.getAllReviews);
-app.get('/customers/reviews/:fooditemid', customers.getReviewsForFoodItem);
+app.get('/customers/reviews/fooditem/:fooditemid', customers.getReviewsForFoodItem);
+app.get('/customers/reviews/restaurant/:restaurantid', customers.getFoodItemReviewsByRestaurantID);
 
 app.post('/customers/reviews/:customerid', customers.postReview);
 app.put('/customers/reviews/:customerid', customers.updateReview);
