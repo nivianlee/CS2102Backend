@@ -168,7 +168,7 @@ CREATE TABLE Customers (
     customerName VARCHAR(50) NOT NULL,
     customerEmail VARCHAR(50) UNIQUE NOT NULL,
     customerPassword VARCHAR(50) NOT NULL,
-    customerPhone VARCHAR(8) UNIQUE NOT NULL,
+    customerPhone VARCHAR(10) UNIQUE NOT NULL,
     rewardPoints INTEGER NOT NULL DEFAULT 0,
     dateCreated DATE NOT NULL
 );
@@ -275,7 +275,7 @@ BEGIN
     RETURN NULL;
 	ELSE 
 		RAISE exception 'paymentid % must either be useCash=TRUE or useCreditCard=TRUE, not both or none', NEW.paymentid;
-	END IF; 
+	END IF;  
 END; 
 $$ language plpgsql;
 
@@ -364,10 +364,25 @@ DECLARE
   numFullTimeInHour INTEGER;
   time_hour_string VARCHAR(20);
   m INTEGER;
+  temp INTEGER ARRAY;
+  months INTEGER ARRAY;
   weeks INTEGER ARRAY;
   w INTEGER;
 BEGIN
   SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
+  SELECT ARRAY(SELECT DISTINCT month FROM FullTimeSchedules) INTO temp;
+  FOREACH m in ARRAY temp LOOP 
+    months := ARRAY_APPEND(months, m*4 - 3);
+    months := ARRAY_APPEND(months, m*4 - 2);
+    months := ARRAY_APPEND(months, m*4 - 1);
+    months := ARRAY_APPEND(months, m*4);
+  END LOOP;
+  SELECT ARRAY_AGG(a ORDER BY a)
+  FROM (
+      SELECT DISTINCT UNNEST(weeks || months) as a
+  ) s INTO weeks; 
+
+
   -- Need to ensure all months MWS and corresponding weeks' WWS exist 
   FOREACH w IN ARRAY weeks LOOP -- weeks do exist, check all weeks
     m := CEILING(w / 4::float); -- month may not exist in 
@@ -712,34 +727,34 @@ CREATE TRIGGER full_time_riders_schedule_valid_rider_trigger
     EXECUTE FUNCTION check_full_time_rider_valid_rider();
 
 -- Ensures that a customer can only review a food item he ordered
-CREATE OR REPLACE FUNCTION check_if_customer_ordered_fooditem() RETURNS TRIGGER
-    AS $$
-DECLARE
-    foodItemIDBeingReviewed INTEGER;
-BEGIN
-    SELECT F.foodItemID INTO foodItemIDBeingReviewed
-        FROM Customers C 
-        NATURAL JOIN Requests R
-        NATURAL JOIN Orders O
-        NATURAL JOIN Contains C2
-        NATURAL JOIN FoodItems F
-        WHERE F.foodItemID = NEW.foodItemID
-        AND C.customerID = NEW.customerID
-        AND O.status = true;
+-- CREATE OR REPLACE FUNCTION check_if_customer_ordered_fooditem() RETURNS TRIGGER
+--     AS $$
+-- DECLARE
+--     foodItemIDBeingReviewed INTEGER;
+-- BEGIN
+--     SELECT F.foodItemID INTO foodItemIDBeingReviewed
+--         FROM Customers C 
+--         NATURAL JOIN Requests R
+--         NATURAL JOIN Orders O
+--         NATURAL JOIN Contains C2
+--         NATURAL JOIN FoodItems F
+--         WHERE F.foodItemID = NEW.foodItemID
+--         AND C.customerID = NEW.customerID
+--         AND O.status = true;
 
-    IF foodItemIDBeingReviewed IS NULL THEN
-        RAISE EXCEPTION 'CustomerID % did not order this food item % ', NEW.customerID, NEW.foodItemID;
-    END IF;
-    RETURN NEW;
-    RETURN NULL;
-END;
-$$ language plpgsql;
+--     IF foodItemIDBeingReviewed IS NULL THEN
+--         RAISE EXCEPTION 'CustomerID % did not order this food item % ', NEW.customerID, NEW.foodItemID;
+--     END IF;
+--     RETURN NEW;
+--     RETURN NULL;
+-- END;
+-- $$ language plpgsql;
 
-DROP TRIGGER IF EXISTS review_trigger ON Reviews CASCADE;
-CREATE TRIGGER review_trigger
-    BEFORE INSERT ON Reviews
-    FOR EACH ROW
-    EXECUTE FUNCTION check_if_customer_ordered_fooditem();
+-- DROP TRIGGER IF EXISTS review_trigger ON Reviews CASCADE;
+-- CREATE TRIGGER review_trigger
+--     BEFORE INSERT ON Reviews
+--     FOR EACH ROW
+--     EXECUTE FUNCTION check_if_customer_ordered_fooditem();
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
 \copy Promotions(promotionID, startTimeStamp, endTimeStamp, promoDescription) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
