@@ -77,6 +77,10 @@ app.get('/promotions', promotions.getPromotions);
 app.get('/promotions/customer', promotions.getPromotionsNotNull);
 app.get('/promotions/:promotionid', promotions.getPromotionsByID);
 app.get('/promotions/restaurant/:restaurantid', promotions.getPromotionsByRestaurantID);
+app.get(
+  '/promotions/generalandrestaurantpromotion/:restaurantid',
+  promotions.getGeneralPromotionsAndPromotionsByRestaurantID
+);
 
 // admin: accounts
 app.post('/admin/login', accounts.login);
