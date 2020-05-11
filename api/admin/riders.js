@@ -23,7 +23,7 @@ const getRiderById = (request, response) => {
 const getOrdersByRiderId = (request, response) => {
   const riderID = parseInt(request.params.riderid);
 
-  pool.query('SELECT * FROM Orders WHERE riderID = $1', [riderID], (error, results) => {
+  pool.query('SELECT * FROM Orders WHERE riderID = $1 and status = false', [riderID], (error, results) => {
     if (error) {
       throw error;
     }
@@ -128,7 +128,7 @@ const getAllRidersSummary = (request, response) => {
          AND year = O.year) AS totalSalaryEarned
   FROM OrdersByMonth_Riders O
     JOIN HoursByMonth_Riders H USING(riderid, month)
-  ORDER BY month, riderid;`
+  ORDER BY month, riderid;`;
 
   pool.query(query, (error, results) => {
     if (error) {
@@ -136,7 +136,7 @@ const getAllRidersSummary = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 const getRiderSummaryById = (request, response) => {
   const query = `
@@ -182,7 +182,7 @@ const getRiderSummaryById = (request, response) => {
          AND year = O.year) AS totalSalaryEarned
   FROM OrdersByMonth_Riders O
     JOIN HoursByMonth_Riders H USING(riderid, month)
-  WHERE riderID = $1`
+  WHERE riderID = $1`;
 
   pool.query(query, [request.params.riderid], (error, results) => {
     if (error) {
@@ -190,110 +190,117 @@ const getRiderSummaryById = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
-}
+};
 
 const toggleUpdateRiderOrderTimestamp = (request, response) => {
   const data = {
-    orderid: parseInt(request.body.orderid)
-  }
-  pool.query(`SELECT riderDepartForResTimeStamp,riderArriveAtResTimeStamp,
+    orderid: parseInt(request.body.orderid),
+  };
+  pool.query(
+    `SELECT riderDepartForResTimeStamp,riderArriveAtResTimeStamp,
                      riderCollectOrderTimeStamp,riderDeliverOrderTimeStamp,
                      riderID
               FROM Orders 
-              WHERE orderid = $1;`, [data.orderid], (error, results) => {
-    if (error) {
-      throw error;
-    }
-    const values = Object.values(results.rows[0])
-    const keys = Object.keys(results.rows[0])
-    let keyToUpdate = null
-    for (let i = 0; i < values.length - 1; i++) { // skip orderplacedtimestamp, avoid riderid
-      if (values[i] === null) {
-        keyToUpdate = keys[i]
-        break
+              WHERE orderid = $1;`,
+    [data.orderid],
+    (error, results) => {
+      if (error) {
+        throw error;
       }
-    }
-    // console.log(keyToUpdate)
-    if (keyToUpdate !== null) {
-      (async () => {
-        const client = await pool.connect()
+      const values = Object.values(results.rows[0]);
+      const keys = Object.keys(results.rows[0]);
+      let keyToUpdate = null;
+      for (let i = 0; i < values.length - 1; i++) {
+        // skip orderplacedtimestamp, avoid riderid
+        if (values[i] === null) {
+          keyToUpdate = keys[i];
+          break;
+        }
+      }
+      // console.log(keyToUpdate)
+      if (keyToUpdate !== null) {
+        (async () => {
+          const client = await pool.connect();
 
-        try {
-          await client.query('BEGIN')
-          const query = `UPDATE Orders 
+          try {
+            await client.query('BEGIN');
+            const query = `UPDATE Orders 
           SET ${keyToUpdate} = CURRENT_TIMESTAMP
           WHERE orderid = $1
-          RETURNING *;`
+          RETURNING *;`;
 
-          const values = [data.orderid]
-          // console.log(values)
-          await client.query(query, values, (error, results) => {
-            if (error) {
-              throw error;
-            }
-          });
-          if (keyToUpdate == "riderdepartforrestimestamp") { // first timestamp updated, update isOccupied = True
-            const query = `UPDATE Riders 
+            const values = [data.orderid];
+            // console.log(values)
+            await client.query(query, values, (error, results) => {
+              if (error) {
+                throw error;
+              }
+            });
+            if (keyToUpdate == 'riderdepartforrestimestamp') {
+              // first timestamp updated, update isOccupied = True
+              const query = `UPDATE Riders 
                            SET isOccupied = TRUE
                            WHERE riderID = $1
-                           RETURNING *;`
+                           RETURNING *;`;
 
-            const riderid = parseInt(values[values.length - 1]);
-            await client.query(query, [riderid], (error, results) => {
-              if (error) {
-                throw error
-              }
-              response.status(201).send({
-                message: `Successfully updated ${keyToUpdate} for ${data.orderid}, and updated Rider ${riderid}.isOccupied = TRUE`,
-                "results": results.rows
-              })
-            })
-          } else if (keyToUpdate == "riderdeliverordertimestamp") { // last timestamp updated, update isOccupied = False
-            const query = `UPDATE Riders 
+              const riderid = parseInt(values[values.length - 1]);
+              await client.query(query, [riderid], (error, results) => {
+                if (error) {
+                  throw error;
+                }
+                response.status(201).send({
+                  message: `Successfully updated ${keyToUpdate} for ${data.orderid}, and updated Rider ${riderid}.isOccupied = TRUE`,
+                  results: results.rows,
+                });
+              });
+            } else if (keyToUpdate == 'riderdeliverordertimestamp') {
+              // last timestamp updated, update isOccupied = False
+              const query = `UPDATE Riders 
                            SET isOccupied = FALSE
                            WHERE riderID = $1
                            RETURNING *;
-            `
-            const riderid = parseInt(values[values.length - 1]);
-            await client.query(query, [riderid], (error, results) => {
-              if (error) {
-                throw error
-              }
-            })
-            const updateQuery = `UPDATE Orders 
+            `;
+              const riderid = parseInt(values[values.length - 1]);
+              await client.query(query, [riderid], (error, results) => {
+                if (error) {
+                  throw error;
+                }
+              });
+              const updateQuery = `UPDATE Orders 
                                  SET status = TRUE
                                  WHERE orderid = $1
-                                 RETURNING *;`
-            await client.query(updateQuery, values, (error, results) => {
-              if (error) {
-                throw error
-              }
+                                 RETURNING *;`;
+              await client.query(updateQuery, values, (error, results) => {
+                if (error) {
+                  throw error;
+                }
+                response.status(201).send({
+                  message: `Successfully updated ${keyToUpdate} and Order.status = TRUE (past order) for ${data.orderid}, and updated Rider ${riderid}.isOccupied = FALSE`,
+                  results: results.rows,
+                });
+              });
+            } else {
               response.status(201).send({
-                message: `Successfully updated ${keyToUpdate} and Order.status = TRUE (past order) for ${data.orderid}, and updated Rider ${riderid}.isOccupied = FALSE`,
-                "results": results.rows
-              })
-            })
-          } else {
-            response.status(201).send({
-              message: `Successfully updated ${keyToUpdate} for ${data.orderid}`,
-              "results": results.rows
-            })
+                message: `Successfully updated ${keyToUpdate} for ${data.orderid}`,
+                results: results.rows,
+              });
+            }
+            await client.query('COMMIT');
+          } catch (e) {
+            await client.query('ROLLBACK');
+            throw e;
+          } finally {
+            client.release();
           }
-          await client.query('COMMIT')
-        } catch (e) {
-          await client.query('ROLLBACK')
-          throw e
-        } finally {
-          client.release()
-        }
-      })().catch(e => console.error(e.stack))
-    } else {
-      response.status(200).send({
-        message: `All timestamps are already updated, delivery has been completed.`
-      })
+        })().catch((e) => console.error(e.stack));
+      } else {
+        response.status(200).send({
+          message: `All timestamps are already updated, delivery has been completed.`,
+        });
+      }
     }
-  })
-}
+  );
+};
 
 module.exports = {
   getRiders,
