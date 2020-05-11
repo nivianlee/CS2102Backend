@@ -370,7 +370,6 @@ DECLARE
   w INTEGER;
 BEGIN
   SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
-  -- SELECT ARRAY(DISTINCT month FROM FullTimeSchedules) INTO months;
   SELECT ARRAY(SELECT DISTINCT month FROM FullTimeSchedules) INTO temp;
   FOREACH m in ARRAY temp LOOP 
     months := ARRAY_APPEND(months, m*4 - 3);
@@ -382,6 +381,7 @@ BEGIN
   FROM (
       SELECT DISTINCT UNNEST(weeks || months) as a
   ) s INTO weeks; 
+
 
   -- Need to ensure all months MWS and corresponding weeks' WWS exist 
   FOREACH w IN ARRAY weeks LOOP -- weeks do exist, check all weeks
