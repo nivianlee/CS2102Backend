@@ -77,6 +77,10 @@ app.get('/promotions', promotions.getPromotions);
 app.get('/promotions/customer', promotions.getPromotionsNotNull);
 app.get('/promotions/:promotionid', promotions.getPromotionsByID);
 app.get('/promotions/restaurant/:restaurantid', promotions.getPromotionsByRestaurantID);
+app.get(
+  '/promotions/generalandrestaurantpromotion/:restaurantid',
+  promotions.getGeneralPromotionsAndPromotionsByRestaurantID
+);
 
 // admin: accounts
 app.post('/admin/login', accounts.login);
@@ -84,8 +88,10 @@ app.post('/admin/login', accounts.login);
 // admin: fdsManagers
 app.get('/fdsManagers/summaryOne', fdsManagers.getFDSManagerSummaryOne);
 app.get('/fdsManagers/summaryTwo', fdsManagers.getFDSManagerSummaryTwo);
+app.get('/fdsManagers/summaryTwoByCustomerId/:customerid', fdsManagers.getFDSManagerSummaryTwoByCustomerId);
 app.get('/fdsManagers/summaryThree', fdsManagers.getFDSManagerSummaryThree);
 app.get('/fdsManagers/summaryFour', fdsManagers.getFDSManagerSummaryFour);
+app.get('/fdsManagers/summaryFourByRiderId/:riderid', fdsManagers.getFDSManagerSummaryFourByRiderId);
 app.get('/fdsManagers', fdsManagers.getFDSManagers);
 app.get('/fdsManagers/:managerid', fdsManagers.getFDSManagerById);
 app.post('/fdsManagers', fdsManagers.createFDSManager);

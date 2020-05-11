@@ -14,7 +14,7 @@ BEGIN;
     VALUES (301, FALSE, '5/4/2020 10:00', '5/8/2019 8:06', '5/8/2019 8:06', '5/8/2019 8:15', '5/8/2019 8:21', null, '864 Merchant Hill', 100, 3);
 
     INSERT INTO Contains(quantity, foodItemID, orderID)
-    VALUES(3, 21, 301);
+    VALUES(201, 21, 301);
 COMMIT;
 
 -- Positive Test Case: Sets availabilityStatus for foodItem 21 to false.
@@ -23,17 +23,7 @@ BEGIN;
     VALUES (301, FALSE, '5/4/2020 11:00', '5/8/2019 8:06', '5/8/2019 8:06', '5/8/2019 8:15', '5/8/2019 8:21', null, '864 Merchant Hill', 100, 3);
 
     INSERT INTO Contains(quantity, foodItemID, orderID)
-    VALUES(2, 21, 301);
-COMMIT;
-
-/* Tests for before_new_orders_trigger */
--- Positive Test Case
-BEGIN;
-    INSERT INTO Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID)
-    VALUES (302, FALSE, '6/4/2020 10:00', '5/8/2019 8:06', '5/8/2019 8:06', '5/8/2019 8:15', '5/8/2019 8:21', null, '864 Merchant Hill', 100, 3);
-
-    INSERT INTO Contains(quantity, foodItemID, orderID)
-    VALUES(1, 21, 302);
+    VALUES(8, 21, 301);
 COMMIT;
 
 /* Tests for part_time_riders_schedule_max_interval_4_hours_trigger */
@@ -103,7 +93,7 @@ COMMIT;
 -- Negative Test Case: Add interval that violates 1 hour break between consecutive intervals
 BEGIN;
     INSERT INTO Riders(riderID, riderName, riderEmail, contactNum, isOccupied, isFullTime, baseSalary)
-    VALUES (200, 'Dummy', 'dummy@dummymail.com', '12345678', TRUE, TRUE, 123);
+    VALUES (200, 'Dummy', 'dummy@dummymail.com', '12345678', FALSE, FALSE, 123);
 
     INSERT INTO PartTimeSchedules(riderID, startTime, endTime, week, day)
     VALUES (200, '10:00:00', '11:00:00', 16, 1);
@@ -114,6 +104,26 @@ BEGIN;
     DELETE FROM Riders R
     WHERE R.riderID = 200;
 COMMIT;
+
+/* Test for full_time_riders_participation_in_hour_interval_trigger and part_time_riders_participation_in_hour_interval_trigger */ 
+-- Negative Test Case: Add lone full time schedule, without existing schedules in the same period 
+BEGIN;
+    INSERT INTO Riders(riderID, riderName, riderEmail, contactNum, isOccupied, isFullTime, baseSalary)
+    VALUES (252, 'Dummy', 'dummy@dummymail.com', '12345678', FALSE, TRUE, 123);
+    
+    INSERT INTO FullTimeSchedules(riderID, shiftID, rangeID, month)
+    VALUES (252, 1, 1, 12);
+  
+ROLLBACK;
+
+-- Negative Test Case: Add lone part time schedule, without existing schedules in the same period 
+BEGIN;
+    INSERT INTO Riders(riderID, riderName, riderEmail, contactNum, isOccupied, isFullTime, baseSalary)
+    VALUES (202, 'Dummy', 'dummy@dummymail.com', '12345678', FALSE, FALSE, 123);
+
+    INSERT INTO PartTimeSchedules(riderID, startTime, endTime, week, day)
+    VALUES (202, '10:00:00', '11:00:00', 1, 1);
+ROLLBACK;
 
 /* Tests for part_time_riders_schedule_between_10_and_48_hours_trigger*/
 -- Positive Test Case: Add interval that satisfies this constraint
