@@ -364,25 +364,10 @@ DECLARE
   numFullTimeInHour INTEGER;
   time_hour_string VARCHAR(20);
   m INTEGER;
-  temp INTEGER ARRAY;
-  months INTEGER ARRAY;
   weeks INTEGER ARRAY;
   w INTEGER;
 BEGIN
   SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
-  SELECT ARRAY(SELECT DISTINCT month FROM FullTimeSchedules) INTO temp;
-  FOREACH m in ARRAY temp LOOP 
-    months := ARRAY_APPEND(months, m*4 - 3);
-    months := ARRAY_APPEND(months, m*4 - 2);
-    months := ARRAY_APPEND(months, m*4 - 1);
-    months := ARRAY_APPEND(months, m*4);
-  END LOOP;
-  SELECT ARRAY_AGG(a ORDER BY a)
-  FROM (
-      SELECT DISTINCT UNNEST(weeks || months) as a
-  ) s INTO weeks; 
-
-
   -- Need to ensure all months MWS and corresponding weeks' WWS exist 
   FOREACH w IN ARRAY weeks LOOP -- weeks do exist, check all weeks
     m := CEILING(w / 4::float); -- month may not exist in 
@@ -757,33 +742,33 @@ CREATE TRIGGER review_trigger
     EXECUTE FUNCTION check_if_customer_ordered_fooditem();
 
 -- Format is \copy {sheetname} from '{path-to-file} DELIMITER ',' CSV HEADER;
-\copy Promotions(promotionID, startTimeStamp, endTimeStamp, promoDescription) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
-\copy Restaurants(restaurantID, restaurantName, minOrderCost, contactNum, address, postalCode, image) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
-\copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
-\copy RestaurantStaff(restaurantStaffID, restaurantStaffName, contactNum, restaurantID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
-\copy Manages(restaurantStaffID, foodItemID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
-\copy Offers(restaurantID, promotionID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Offers.csv' DELIMITER ',' CSV HEADER;
-\copy TargettedPromoCode(promotionID, promotionDetails) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/TargettedPromoCode.csv' DELIMITER ',' CSV HEADER;
-\copy Percentage(promotionID, percentageAmount) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Percentage.csv' DELIMITER ',' CSV HEADER;
-\copy Amount(promotionID, absoluteAmount) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Amount.csv' DELIMITER ',' CSV HEADER;;
-\copy FreeDelivery(promotionID, deliveryAmount) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FreeDelivery.csv' DELIMITER ',' CSV HEADER;
-\copy FDSManagers(managerID, managerName, contactNum) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FDSManagers.csv' DELIMITER ',' CSV HEADER;
-\copy Launches(managerID, promotionID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Launches.csv' DELIMITER ',' CSV HEADER;
-\copy DeliveryFee(deliveryID, deliveryFeeAmount) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/DeliveryFee.csv' DELIMITER ',' CSV HEADER;
-\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, rewardPoints, dateCreated) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
-\copy Sets(managerID, deliveryID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Sets.csv' DELIMITER ',' CSV HEADER;
-\copy Riders(riderID,riderName,riderEmail,contactNum,isOccupied,isFullTime,baseSalary) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Riders.csv' DELIMITER ',' CSV HEADER;
-\copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
-\copy Applies(orderID, promotionID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
-\copy Contains(quantity, foodItemID, orderID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
-\copy CreditCards(customerID, creditCardNumber, creditCardName, expiryMonth, expiryYear) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
-\copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
-\copy Requests(orderID, paymentID, customerID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
-\copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
-\copy Rates(customerID, riderID, orderID, rating) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
-\copy Shifts(shiftID, shiftOneStart, shiftOneEnd, shiftTwoStart, shiftTwoEnd) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Shifts.csv' DELIMITER ',' CSV HEADER;
-\copy PartTimeSchedules(riderID, startTime, endTime, week, day) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/PartTimeSchedules.csv' DELIMITER ',' CSV HEADER;
-\copy Reviews(reviewID, reviewImg, reviewMsg, customerID, foodItemID) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
+\copy Promotions(promotionID, startTimeStamp, endTimeStamp, promoDescription) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Promotions.csv' DELIMITER ',' CSV HEADER;
+\copy Restaurants(restaurantID, restaurantName, minOrderCost, contactNum, address, postalCode, image) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Restaurants.csv' DELIMITER ',' CSV HEADER;
+\copy FoodItems(foodItemID, foodItemName, price, availabilityStatus, image, maxNumOfOrders, category, restaurantID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FoodItems.csv' DELIMITER ',' CSV HEADER;
+\copy RestaurantStaff(restaurantStaffID, restaurantStaffName, contactNum, restaurantID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/RestaurantStaff.csv' DELIMITER ',' CSV HEADER;
+\copy Manages(restaurantStaffID, foodItemID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Manages.csv' DELIMITER ',' CSV HEADER;
+\copy Offers(restaurantID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Offers.csv' DELIMITER ',' CSV HEADER;
+\copy TargettedPromoCode(promotionID, promotionDetails) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/TargettedPromoCode.csv' DELIMITER ',' CSV HEADER;
+\copy Percentage(promotionID, percentageAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Percentage.csv' DELIMITER ',' CSV HEADER;
+\copy Amount(promotionID, absoluteAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Amount.csv' DELIMITER ',' CSV HEADER;;
+\copy FreeDelivery(promotionID, deliveryAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FreeDelivery.csv' DELIMITER ',' CSV HEADER;
+\copy FDSManagers(managerID, managerName, contactNum) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FDSManagers.csv' DELIMITER ',' CSV HEADER;
+\copy Launches(managerID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Launches.csv' DELIMITER ',' CSV HEADER;
+\copy DeliveryFee(deliveryID, deliveryFeeAmount) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/DeliveryFee.csv' DELIMITER ',' CSV HEADER;
+\copy Customers(customerID, customerName, customerEmail, customerPassword, customerPhone, rewardPoints, dateCreated) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Customers.csv' DELIMITER ',' CSV HEADER;
+\copy Sets(managerID, deliveryID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Sets.csv' DELIMITER ',' CSV HEADER;
+\copy Riders(riderID,riderName,riderEmail,contactNum,isOccupied,isFullTime,baseSalary) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Riders.csv' DELIMITER ',' CSV HEADER;
+\copy Orders(orderID, status, orderPlacedTimeStamp, riderDepartForResTimeStamp, riderArriveAtResTimeStamp, riderCollectOrderTimeStamp, riderDeliverOrderTimeStamp, specialRequest, deliveryAddress, riderID, deliveryID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Orders.csv' DELIMITER ',' CSV HEADER;
+\copy Applies(orderID, promotionID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Applies.csv' DELIMITER ',' CSV HEADER;
+\copy Contains(quantity, foodItemID, orderID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Contains.csv' DELIMITER ',' CSV HEADER;
+\copy CreditCards(customerID, creditCardNumber, creditCardName, expiryMonth, expiryYear) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/CreditCards.csv' DELIMITER ',' CSV HEADER;
+\copy Payments(paymentID, orderID, creditCardNumber, useCash, useCreditCard, useRewardPoints) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Payments.csv' DELIMITER ',' CSV HEADER; 
+\copy Requests(orderID, paymentID, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Requests.csv' DELIMITER ',' CSV HEADER;
+\copy Addresses(addressID,address, addressTimeStamp, postalCode, customerID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Addresses.csv' DELIMITER ',' CSV HEADER;
+\copy Rates(customerID, riderID, orderID, rating) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
+\copy Shifts(shiftID, shiftOneStart, shiftOneEnd, shiftTwoStart, shiftTwoEnd) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Shifts.csv' DELIMITER ',' CSV HEADER;
+\copy PartTimeSchedules(riderID, startTime, endTime, week, day) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/PartTimeSchedules.csv' DELIMITER ',' CSV HEADER;
+\copy Reviews(reviewID, reviewImg, reviewMsg, customerID, foodItemID) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
 
 -- Insert DayRanges values
 INSERT INTO DayRanges VALUES (1,'{1,2,3,4,5}');
@@ -795,7 +780,7 @@ INSERT INTO DayRanges VALUES (6,'{6,7,1,2,3}');
 INSERT INTO DayRanges VALUES (7,'{7,1,2,3,4}');
 
 -- Needs to be after DayRanges
-\copy FullTimeSchedules(riderID, shiftID, rangeID, month) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FullTimeSchedules.csv' DELIMITER ',' CSV HEADER;
+\copy FullTimeSchedules(riderID, shiftID, rangeID, month) from 'C:/Users/Andy/Desktop/MyProjects/CS2102Backend/database/mock_data/FullTimeSchedules.csv' DELIMITER ',' CSV HEADER;
 
 -- Update each `SERIAL` sequence count after .csv insertion 
 select setval('promotions_promotionid_seq',(select max(promotionid) from Promotions));
