@@ -475,6 +475,30 @@ const deleteCustomerCreditCard = (request, response) => {
   });
 };
 
+const rateRider = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+
+  const data = {
+    orderid: request.body.orderid,
+    riderid: request.body.riderid,
+    rating: request.body.rating,
+  };
+  const values = [customerid, data.riderid, data.orderid, data.rating];
+
+  const query = `
+    INSERT INTO Rates (customerID, riderID, orderID, rating)
+    VALUES($1, $2, $3, $4)
+  `;
+
+  pool.query(query, values, (error, results) => {
+    if (error) {
+      response.status(401).send({ message: 'Failed!' });
+      throw error;
+    }
+    response.status(201).send({ message: 'Rider has been rated successfully!' });
+  });
+};
+
 const postOrder = (request, response) => {
   // Adding of Address & Credit cards are handled on FE
 
@@ -630,4 +654,5 @@ module.exports = {
   addCustomerCreditCard,
   updateCustomerCreditCard,
   deleteCustomerCreditCard,
+  rateRider,
 };

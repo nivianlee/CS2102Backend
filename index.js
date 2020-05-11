@@ -66,10 +66,12 @@ app.post('/customers/creditcard/:customerid', customers.addCustomerCreditCard); 
 app.put('/customers/creditcard/:customerid', customers.updateCustomerCreditCard); // CFE done
 app.delete('/customers/creditcard/:customerid', customers.deleteCustomerCreditCard); // CFE done
 
+app.post('/customers/rider/:customerid', customers.rateRider);
+
 // restaurant apis
 app.get('/restaurants', restaurants.getRestaurants); // CFE done
 
-// fooditems apis
+// fooditems apisd
 app.get('/fooditems', foodItems.getFoodItems);
 app.get('/fooditems/:restaurantid', foodItems.getFoodItemsByRestaurantId); // CFE done
 
@@ -152,6 +154,7 @@ app.get('/riders/:riderid', riders.getRiderById);
 app.get('/riders/:riderid/getOrdersByRiderId', riders.getOrdersByRiderId);
 app.get('/riders/:riderid/getAllRidersSummary', riders.getAllRidersSummary); // riderid is not required here
 app.get('/riders/:riderid/getRiderSummaryById', riders.getRiderSummaryById);
+app.get('/riders/:riderid/ratings', riders.getRatingsByRiderId);
 app.post('/riders', riders.createRider);
 app.put('/riders/:riderid', riders.updateRider);
 app.post('/riders/toggleOrderTimestamp', riders.toggleUpdateRiderOrderTimestamp);
