@@ -314,6 +314,7 @@ const postReview = (request, response) => {
 
   pool.query(query, values, (error, results) => {
     if (error) {
+      response.status(400).send(error);
       throw error;
     }
     response.status(200).send({ message: 'Review has been added successfully!' });
