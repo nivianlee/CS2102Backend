@@ -768,7 +768,6 @@ CREATE TRIGGER review_trigger
 \copy Rates(customerID, riderID, orderID, rating) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
 \copy Shifts(shiftID, shiftOneStart, shiftOneEnd, shiftTwoStart, shiftTwoEnd) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Shifts.csv' DELIMITER ',' CSV HEADER;
 \copy PartTimeSchedules(riderID, startTime, endTime, week, day) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/PartTimeSchedules.csv' DELIMITER ',' CSV HEADER;
--- Needs several tables to be createdgigggg before it
 \copy Reviews(reviewID, reviewImg, reviewMsg, customerID, foodItemID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
 
 -- Insert DayRanges values
