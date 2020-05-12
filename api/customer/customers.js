@@ -315,6 +315,25 @@ const getFoodItemReviewsByRestaurantID = (request, response) => {
   });
 };
 
+const getFoodItemReviewsByFoodItemIDAndCustomerID = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+  const fooditemid = parseInt(request.params.fooditemid);
+
+  const query = `
+    SELECT * 
+    FROM Reviews 
+    WHERE customerid = $1
+    AND fooditemid = $2
+  `;
+
+  pool.query(query, [customerid, fooditemid], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+};
+
 const postReview = (request, response) => {
   const data = {
     reviewimg: request.body.reviewimg,
@@ -325,17 +344,33 @@ const postReview = (request, response) => {
 
   const values = [data.reviewimg, data.reviewmsg, data.customerid, data.fooditemid];
 
+  // Check if customer has already reviewed this item.
+  const initial_query = `
+    SELECT * 
+    FROM Reviews
+    WHERE customerid = $1
+    and fooditemid = $2
+  `;
+
   const query = `
   INSERT INTO Reviews (reviewImg, reviewMsg , customerID, foodItemID) 
   VALUES ($1, $2, $3, $4)
   `;
 
-  pool.query(query, values, (error, results) => {
+  pool.query(initial_query, [data.customerid, data.fooditemid], (error, results) => {
     if (error) {
       response.status(400).send(error);
       throw error;
+    } else if (results.rows.length > 0) {
+      console.error('Customer has made a review on this food item before.');
+      throw error;
     }
-    response.status(201).send({ message: 'Review has been added successfully!' });
+    pool.query(query, values, (error, results) => {
+      if (error) {
+        throw error;
+      }
+      response.status(200).send({ message: 'Review has been added successfully!' });
+    });
   });
 };
 
@@ -685,6 +720,7 @@ module.exports = {
   getReviewsForFoodItem,
   getReviewForFoodItemByOrderId,
   getFoodItemReviewsByRestaurantID,
+  getFoodItemReviewsByFoodItemIDAndCustomerID,
   postReview,
   updateReview,
   deleteReview,

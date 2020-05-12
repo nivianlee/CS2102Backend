@@ -54,8 +54,12 @@ app.post('/customers/orders', customers.postOrder);
 
 app.get('/customers/reviews', customers.getAllReviews);
 app.get('/customers/reviews/fooditem/:fooditemid', customers.getReviewsForFoodItem);
-app.get('/customers/:customerid/reviews/orders/:orderid/fooditem/:fooditemid', customers.getReviewForFoodItemByOrderId);
+app.get('/customers/:customerid/reviews/fooditem/:fooditemid', customers.getReviewForFoodItemByOrderId);
 app.get('/customers/reviews/restaurant/:restaurantid', customers.getFoodItemReviewsByRestaurantID);
+app.get(
+  '/customers/reviews/fooditem/:fooditemid/customer/:customerid',
+  customers.getFoodItemReviewsByFoodItemIDAndCustomerID
+);
 
 app.post('/customers/reviews/:customerid', customers.postReview);
 app.put('/customers/reviews/:customerid', customers.updateReview);
