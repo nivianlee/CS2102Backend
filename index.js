@@ -54,6 +54,7 @@ app.post('/customers/orders', customers.postOrder);
 
 app.get('/customers/reviews', customers.getAllReviews);
 app.get('/customers/reviews/fooditem/:fooditemid', customers.getReviewsForFoodItem);
+app.get('/customers/:customerid/reviews/fooditem/:fooditemid', customers.getReviewForFoodItemByOrderId);
 app.get('/customers/reviews/restaurant/:restaurantid', customers.getFoodItemReviewsByRestaurantID);
 app.get(
   '/customers/reviews/fooditem/:fooditemid/customer/:customerid',
@@ -71,7 +72,7 @@ app.put('/customers/creditcard/:customerid', customers.updateCustomerCreditCard)
 app.delete('/customers/creditcard/:customerid', customers.deleteCustomerCreditCard); // CFE done
 
 app.post('/customers/rider/:customerid', customers.rateRider);
-
+app.get('/customers/rider/:customerid/order/:orderid', customers.getRiderRating);
 // restaurant apis
 app.get('/restaurants', restaurants.getRestaurants); // CFE done
 

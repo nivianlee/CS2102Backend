@@ -197,6 +197,7 @@ const getCurrentOrders = (request, response) => {
   inner join DeliveryFee D on (O.deliveryID = D.deliveryID)
   inner join OrderCosts OC on (O.orderid = OC.orderid)
   inner join Payments P on (P.paymentID = R.paymentID)
+  inner join Riders Rd USING (riderID)
   WHERE customerID = $1
   AND O.status = false
 `;
@@ -229,11 +230,11 @@ const getPastOrders = (request, response) => {
 const getPastOrdersWithRes = (request, response) => {
   const customerid = parseInt(request.params.customerid);
   const query = `
-  SELECT distinct O.orderID, Res.restaurantID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, O.orderPlacedTimeStamp, D.deliveryFeeAmount, sum(quantity*price) as TotalCost
+  SELECT distinct O.orderID, O.riderID, Res.restaurantID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, O.orderPlacedTimeStamp, D.deliveryFeeAmount, sum(quantity*price) as TotalCost
   FROM Requests R natural join Orders O natural join Contains C natural join FoodItems F inner join Restaurants Res on (Res.restaurantID = F.restaurantID) inner join DeliveryFee D on (O.deliveryID = D.deliveryID)
   WHERE customerID = $1
   AND O.status = true
-  GROUP BY O.orderID, Res.restaurantID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, D.deliveryFeeAmount
+  GROUP BY O.orderID, O.riderID, Res.restaurantID, Res.restaurantname, Res.contactnum, Res.address, O.deliveryaddress, O.riderdeliverordertimestamp, D.deliveryFeeAmount
   ORDER BY O.orderPlacedTimeStamp desc
 `;
   pool.query(query, [customerid], (error, results) => {
@@ -249,7 +250,7 @@ const getAnOrderByCusIdNOrderId = (request, response) => {
   const orderid = parseInt(request.params.orderid);
   const query = `
   SELECT *
-  FROM Requests R natural join Contains C natural join FoodItems F
+  FROM Requests R natural join Contains C natural join FoodItems F natural join Orders O
   WHERE customerID = $1
   AND orderID = $2
 `;
@@ -278,6 +279,23 @@ const getReviewsForFoodItem = (request, response) => {
     }
     response.status(200).json(results.rows);
   });
+};
+
+const getReviewForFoodItemByOrderId = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+  const fooditemid = parseInt(request.params.fooditemid);
+
+  pool.query(
+    'SELECT * FROM Reviews WHERE foodItemID = $1 AND customerID = $2',
+    [fooditemid, customerid],
+    (error, results) => {
+      if (error) {
+        response.status(400).send(error);
+        throw error;
+      }
+      response.status(200).json(results.rows);
+    }
+  );
 };
 
 const getFoodItemReviewsByRestaurantID = (request, response) => {
@@ -341,6 +359,7 @@ const postReview = (request, response) => {
 
   pool.query(initial_query, [data.customerid, data.fooditemid], (error, results) => {
     if (error) {
+      response.status(400).send(error);
       throw error;
     } else if (results.rows.length > 0) {
       console.error('Customer has made a review on this food item before.');
@@ -534,6 +553,25 @@ const rateRider = (request, response) => {
   });
 };
 
+const getRiderRating = (request, response) => {
+  const customerid = parseInt(request.params.customerid);
+  const orderid = parseInt(request.params.orderid);
+
+  const query = `
+    SELECT * FROM  Rates 
+    WHERE customerID = $1
+    AND orderID = $2
+  `;
+
+  pool.query(query, [customerid, orderid], (error, results) => {
+    if (error) {
+      response.status(401).send({ message: 'Failed!' });
+      throw error;
+    }
+    response.status(201).send(results.rows);
+  });
+};
+
 const postOrder = (request, response) => {
   // Adding of Address & Credit cards are handled on FE
 
@@ -579,7 +617,7 @@ const postOrder = (request, response) => {
     try {
       await client.query('BEGIN');
       // Randomly select rider who is free
-      const getRiderId = `SELECT riderID FROM Riders WHERE isOccupied = true LIMIT 1`;
+      const getRiderId = `SELECT riderID FROM Riders WHERE isOccupied = false LIMIT 1`;
       const riderid = await client.query(getRiderId);
 
       const orderValues = [
@@ -680,6 +718,7 @@ module.exports = {
   postOrder,
   getAllReviews,
   getReviewsForFoodItem,
+  getReviewForFoodItemByOrderId,
   getFoodItemReviewsByRestaurantID,
   getFoodItemReviewsByFoodItemIDAndCustomerID,
   postReview,
@@ -691,4 +730,5 @@ module.exports = {
   updateCustomerCreditCard,
   deleteCustomerCreditCard,
   rateRider,
+  getRiderRating,
 };

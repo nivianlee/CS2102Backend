@@ -168,7 +168,7 @@ CREATE TABLE Customers (
     customerName VARCHAR(50) NOT NULL,
     customerEmail VARCHAR(50) UNIQUE NOT NULL,
     customerPassword VARCHAR(50) NOT NULL,
-    customerPhone VARCHAR(8) UNIQUE NOT NULL,
+    customerPhone VARCHAR(10) UNIQUE NOT NULL,
     rewardPoints INTEGER NOT NULL DEFAULT 0,
     dateCreated DATE NOT NULL
 );
@@ -275,7 +275,7 @@ BEGIN
     RETURN NULL;
 	ELSE 
 		RAISE exception 'paymentid % must either be useCash=TRUE or useCreditCard=TRUE, not both or none', NEW.paymentid;
-	END IF; 
+	END IF;  
 END; 
 $$ language plpgsql;
 
@@ -364,10 +364,25 @@ DECLARE
   numFullTimeInHour INTEGER;
   time_hour_string VARCHAR(20);
   m INTEGER;
+  temp INTEGER ARRAY;
+  months INTEGER ARRAY;
   weeks INTEGER ARRAY;
   w INTEGER;
 BEGIN
   SELECT ARRAY(SELECT DISTINCT week FROM PartTimeSchedules) INTO weeks;
+  SELECT ARRAY(SELECT DISTINCT month FROM FullTimeSchedules) INTO temp;
+  FOREACH m in ARRAY temp LOOP 
+    months := ARRAY_APPEND(months, m*4 - 3);
+    months := ARRAY_APPEND(months, m*4 - 2);
+    months := ARRAY_APPEND(months, m*4 - 1);
+    months := ARRAY_APPEND(months, m*4);
+  END LOOP;
+  SELECT ARRAY_AGG(a ORDER BY a)
+  FROM (
+      SELECT DISTINCT UNNEST(weeks || months) as a
+  ) s INTO weeks; 
+
+
   -- Need to ensure all months MWS and corresponding weeks' WWS exist 
   FOREACH w IN ARRAY weeks LOOP -- weeks do exist, check all weeks
     m := CEILING(w / 4::float); -- month may not exist in 
@@ -768,7 +783,6 @@ CREATE TRIGGER review_trigger
 \copy Rates(customerID, riderID, orderID, rating) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Rates.csv' DELIMITER ',' CSV HEADER;
 \copy Shifts(shiftID, shiftOneStart, shiftOneEnd, shiftTwoStart, shiftTwoEnd) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Shifts.csv' DELIMITER ',' CSV HEADER;
 \copy PartTimeSchedules(riderID, startTime, endTime, week, day) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/PartTimeSchedules.csv' DELIMITER ',' CSV HEADER;
--- Needs several tables to be createdgigggg before it
 \copy Reviews(reviewID, reviewImg, reviewMsg, customerID, foodItemID) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/Reviews.csv' DELIMITER ',' CSV HEADER;
 
 -- Insert DayRanges values
@@ -781,7 +795,7 @@ INSERT INTO DayRanges VALUES (6,'{6,7,1,2,3}');
 INSERT INTO DayRanges VALUES (7,'{7,1,2,3,4}');
 
 -- Needs to be after DayRanges
-\copy FullTimeSchedules(riderID, shiftID, rangeID, month) from '/Users/nittayawancharoenkharungrueang/CS2102Backend/database/mock_data/FullTimeSchedules.csv' DELIMITER ',' CSV HEADER;
+\copy FullTimeSchedules(riderID, shiftID, rangeID, month) from '/Users/User/Downloads/lingzhiyu/CS2102Backend/database/mock_data/FullTimeSchedules.csv' DELIMITER ',' CSV HEADER;
 
 -- Update each `SERIAL` sequence count after .csv insertion 
 select setval('promotions_promotionid_seq',(select max(promotionid) from Promotions));
@@ -839,6 +853,52 @@ create view TotalCostPerMonth(month, year, totalOrders, totalOrdersSum) as
                ORDER BY year, month) as res);
 
 /* Additional triggers that can only be created after mock data is inserted */
+CREATE OR REPLACE FUNCTION check_covering_constraint_on_promotions() RETURNS TRIGGER
+    AS $$
+DECLARE
+    violateCoveringConstraintPromotionID INTEGER;
+    belongToMoreThanOneCategoryPromotionID INTEGER;
+BEGIN
+    SELECT P.promotionID INTO violateCoveringConstraintPromotionID
+      FROM Promotions P
+      LEFT JOIN TargettedPromoCode USING (promotionID) 
+      LEFT JOIN Percentage USING (promotionID) 
+      LEFT JOIN Amount USING (promotionID) 
+      LEFT JOIN FreeDelivery USING (promotionID)
+      WHERE promotiondetails IS NULL 
+      AND percentageamount IS NULL
+      AND absoluteamount IS NULL
+      AND deliveryamount IS NULL;
+
+    IF violateCoveringConstraintPromotionID IS NOT NULL THEN
+        RAISE EXCEPTION 'Promotion % must belong to one of the categories!', violateCoveringConstraintPromotionID;
+    END IF;
+
+    SELECT P.promotionID INTO belongToMoreThanOneCategoryPromotionID
+      FROM Promotions P
+      LEFT JOIN TargettedPromoCode USING (promotionID) 
+      LEFT JOIN Percentage USING (promotionID) 
+      LEFT JOIN Amount USING (promotionID) 
+      LEFT JOIN FreeDelivery USING (promotionID)
+      WHERE (promotiondetails IS NOT NULL AND percentageamount IS NOT NULL) 
+      OR (promotiondetails IS NOT NULL AND absoluteamount IS NOT NULL) 
+      OR (promotiondetails IS NOT NULL AND deliveryamount IS NOT NULL) 
+      OR (percentageamount IS NOT NULL AND absoluteamount IS NOT NULL) 
+      OR (percentageamount IS NOT NULL AND deliveryamount IS NOT NULL) 
+      OR (absoluteamount IS NOT NULL AND deliveryamount IS NOT NULL); 
+
+    IF belongToMoreThanOneCategoryPromotionID IS NOT NULL THEN
+        RAISE EXCEPTION 'Promotion % must belong to exactly one of the categories!', belongToMoreThanOneCategoryPromotionID;
+    END IF;
+    RETURN NULL;
+END;
+$$ language plpgsql;
+
+DROP TRIGGER IF EXISTS promotions_trigger ON Promotions CASCADE;
+CREATE CONSTRAINT TRIGGER promotions_trigger 
+    AFTER INSERT OR UPDATE OR DELETE ON Promotions
+    DEFERRABLE INITIALLY DEFERRED 
+    FOR EACH ROW EXECUTE FUNCTION check_covering_constraint_on_promotions();
 
 CREATE OR REPLACE FUNCTION check_or_reset_food_availability() RETURNS TRIGGER
   AS $$
